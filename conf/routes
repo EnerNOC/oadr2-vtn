@@ -3,7 +3,12 @@
 # ~~~~
 
 # Home page
-POST     /test                           controllers.Application.sayHello()
+GET	/						controllers.Application.index()
+
+# Requests
+GET	/events					controllers.Application.events()
+POST	/events					controllers.Application.newEvent()
+POST	/events/:eventID/delete			controllers.Application.deleteEvent(eventID: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
