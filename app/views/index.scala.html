@@ -1,0 +1,28 @@
+@(eiEventsForm: Form[EiEventForm])
+
+@import helper._
+
+
+@main("Test") {
+    <h2>Add a new event.</h2>
+    @form(routes.Application.newEvent()) {
+        <h4>Event Descriptor</h4>
+        @inputText(eiEventsForm("EventID"))       
+        
+        @inputText(eiEventsForm("Priority"))
+       
+        @inputText(eiEventsForm("Status"))
+        <h4>Active Period </h4>
+        @inputText(eiEventsForm("Start"))
+        
+        @inputText(eiEventsForm("Duration")) 
+      
+        <h4>Event Signal</h4>
+        
+        @inputText(eiEventsForm("SignalID"))
+        
+       <input type="submit" value="Create">
+                
+    }
+    
+}
