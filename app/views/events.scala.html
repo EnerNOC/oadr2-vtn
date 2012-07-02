@@ -1,0 +1,54 @@
+@(eventsList: List[EiEvent], eventForm: EiEventForm)
+
+@import helper._
+
+@import helper.twitterBootstrap._
+
+@main(Html("Events"), "") {
+
+		@if(flash.containsKey("success")) {
+		        <div class="alert-message success">
+		            <strong>Success!</strong> @flash.get("success")
+		        </div>
+		} 
+		    
+        <table class="zebra-striped">
+            <thead>
+                <tr>
+                	<th>Event ID</th>
+                	<th>Priority</th>
+                	<th>Status</th>
+                	<th>Start</th>
+                	<th>Duration</th>
+                	<th>Signal ID</th>
+                	<th></th>
+                </tr>
+            </thead>
+            <tfoot>
+            </tfoot>
+            <tbody>            	
+				@for(event <- eventsList){
+					<tr>
+						<td><a href="@routes.Events.editEvent(event.getHjid())">@event.getEventDescriptor().getEventID()</a></td>
+						<td>@event.getEventDescriptor().getPriority()</td>
+						<td>@event.getEventDescriptor().getEventStatus()</td>
+						<td>@eventForm.displayReadableStart(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString())</td>
+						<td>@eventForm.displayReadableDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration())</td>
+						<td>@event.getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>
+						
+						<td>
+							@form(routes.Events.editEvent(event.getHjid())){
+								<input type="submit" value="Edit" class="btn primary">
+							}
+						</td>		
+						
+						<td>
+							@form(routes.Events.deleteEvent(event.getHjid())){
+								<input type="submit" value="Delete" class="btn danger">
+							}
+						</td>						
+					</tr>
+				}            	
+            </tbody>
+        </table>
+}

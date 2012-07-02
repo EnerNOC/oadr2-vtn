@@ -1,0 +1,36 @@
+@(projects: List[ProjectForm])
+
+@import helper._
+
+@import helper.twitterBootstrap._
+
+@main(Html("Projects"), "") {
+
+		@if(flash.containsKey("success")) {
+		        <div class="alert-message warning">
+		            <strong>Done!</strong> @flash.get("success")
+		        </div>
+		} 
+		    
+        <table class="zebra-striped">
+            <thead>
+                <tr>
+                	<th>Project Name</th>
+                	<th>Context URI</th>
+                	<th></th>                	
+                	<th></th>
+                	<th></th>
+                	<th></th>                	
+                	<th></th>
+                	<th></th>
+                	<th></th>
+                	<th></th>
+                	<th></th>
+                </tr>
+            </thead>
+            <tfoot>
+            </tfoot>
+            <tbody>       	
+            </tbody>
+        </table>
+}
