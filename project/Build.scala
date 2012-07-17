@@ -4,7 +4,7 @@ import PlayProject._
 
 object ApplicationBuild extends Build {
 
-    val appName         = "play-oadr2-model"
+    val appName         = "oadr2-vtn-refimpl" //play-oadr2-model
     val appVersion      = "1.0-SNAPSHOT"
 
     val appDependencies = Seq(
@@ -14,7 +14,8 @@ object ApplicationBuild extends Build {
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = JAVA).settings(
    	  //added to include the oadr2.model library to be referenceable(sp?) in the views package
-      templatesImport += "org.enernoc.open.oadr2.model._"    
+      templatesImport += "org.enernoc.open.oadr2.model._" ,
+      ebeanEnabled := false
     )
 
 }

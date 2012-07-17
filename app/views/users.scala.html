@@ -1,10 +1,10 @@
-@(projects: List[ProjectForm])
+@(userList: List[UserForm])
 
 @import helper._
 
 @import helper.twitterBootstrap._
 
-@main(Html("Programs"), "Programs") {
+@main(Html("Users"), "Users") {
 
 		@if(flash.containsKey("success")) {
 		        <div class="alert-message success">
@@ -20,19 +20,18 @@
         <table class="zebra-striped">
             <thead>
                 <tr>
+                	<th>User Name</th>
                 	<th>Program Name</th>
-                	<th>Context URI</th>
-                	<th></th>    
                 </tr>
             </thead>
             <tfoot>
             </tfoot>
             <tbody>
-            @for(project <- projects){ 
+            @for(user <- userList){ 
             	<tr>
-	            	<td>@project.getProjectName()</td>
-	            	<td>@project.getProjectURI()</td>	            	
-					<td>@form(routes.Markets.deleteProject(project.getId())){
+	            	<td>@user.getUserName()</td>
+	            	<td>@user.getProjectId()</td>	            	
+					<td>@form(routes.Users.deleteUser(user.getId())){
 							<input type="submit" value="Delete" class="btn danger">
 						}
 					</td>

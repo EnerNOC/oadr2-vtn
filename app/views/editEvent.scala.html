@@ -1,4 +1,4 @@
-@(hjid: Long, eiEventsForm: Form[EiEventForm], eiEvent: EiEventForm)
+@(id: Long, eiEventsForm: Form[EiEventForm], eiEvent: EiEventForm, programs: Map[String, String])
 
 @import helper._
 
@@ -7,7 +7,7 @@
 @main(Html("Edit event"), "" ){
         
     
-	@form(routes.Events.newEvent(), 'class -> "form-inline") {
+	@form(routes.Events.updateEvent(id), 'class -> "form-inline") {
 		
 		@if(flash.size() > 0){
 	        <div class="alert-message error">
@@ -81,6 +81,12 @@
 				@inputText(eiEventsForm("signalID"), '_label -> "Signal ID")
 				
 			<h3>Market Context</h3>
+			@select(
+                eiEventsForm("marketContext"), 
+                options(programs), 
+	                '_label -> "Status", '_default -> "-- Choose a program --",
+	                '_showConstraints -> false
+	            )
 		</fieldset>
 		
         <div class="actions">

@@ -3,12 +3,45 @@
 # ~~~~
 
 # Home page
-GET	/						controllers.Application.index()
+GET	/						controllers.Events.index()
 
-# Requests
-GET	/events					controllers.Application.events()
-POST	/events					controllers.Application.newEvent()
-POST	/events/:eventID/delete			controllers.Application.deleteEvent(eventID: String)
+# Event List
+GET /events					controllers.Events.events()
+
+# New Event
+GET	/events/new					controllers.Events.blankEvent()
+POST	/events					controllers.Events.newEvent()
+
+# Edit Event
+GET /events/:id			controllers.Events.editEvent(id:Long)
+POST /events/:id		controllers.Events.updateEvent(id:Long)
+
+# Delete Event
+POST    /events/:id/delete       controllers.Events.deleteEvent(id:Long)
+
+# Project List
+GET /programs					controllers.Markets.projects()
+
+# New Event
+GET	/programs/new					controllers.Markets.blankProject()
+POST	/programs					controllers.Markets.newProject()
+
+# Delete Event
+POST    /project/:id/delete       controllers.Markets.deleteProject(id:Long)
+
+# Handle Request
+GET /requests			controllers.Requests.requests()
+POST /requests			controllers.Requests.marshalRequest()
+
+# User List
+GET /users					controllers.Users.users()
+
+# New User
+GET /users/new				controllers.Users.blankUser()
+POST /users					controllers.Users.newUser()
+
+# Delete User
+POST	/users/:id/delete	controllers.Users.deleteUser(id:Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

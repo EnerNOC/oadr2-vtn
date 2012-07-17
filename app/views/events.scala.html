@@ -1,27 +1,27 @@
-@(eventsList: List[EiEvent], eventForm: EiEventForm)
+@(eventsList: List[EiEventForm], eventForm: EiEventForm)
 
 @import helper._
 
 @import helper.twitterBootstrap._
 
-@main(Html("Events"), "") {
+@main(Html("Events"), "Events") {
 
 		@if(flash.containsKey("success")) {
 		        <div class="alert-message success">
-		            <strong>Success!</strong> @flash.get("success")
+		            <strong>Success: </strong> @flash.get("success")
 		        </div>
 		} 
-		    
+		   
         <table class="zebra-striped">
             <thead>
                 <tr>
                 	<th>Event ID</th>
                 	<th>Priority</th>
                 	<th>Status</th>
-                	<th>Start</th>
+                	<th>Start Time</th>
                 	<th>Duration</th>
                 	<th>Signal ID</th>
-                	<th></th>
+                	<th>Program</th>
                 </tr>
             </thead>
             <tfoot>
@@ -29,21 +29,19 @@
             <tbody>            	
 				@for(event <- eventsList){
 					<tr>
-						<td><a href="@routes.Events.editEvent(event.getHjid())">@event.getEventDescriptor().getEventID()</a></td>
-						<td>@event.getEventDescriptor().getPriority()</td>
-						<td>@event.getEventDescriptor().getEventStatus()</td>
-						<td>@eventForm.displayReadableStart(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString())</td>
-						<td>@eventForm.displayReadableDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration())</td>
-						<td>@event.getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>
+						<td><a href="@routes.Events.editEvent(event.getEiEvent().getHjid())">@event.getEiEvent().getEventDescriptor().getEventID()</a></td>
+						<td>@event.getEiEvent().getEventDescriptor().getPriority()</td>
+						<td>@event.getEiEvent().getEventDescriptor().getEventStatus()</td>
+						<td>@eventForm.displayReadableStart(event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().toString())</td>
+						<td>@eventForm.displayReadableDuration(event.getEiEvent().getEiActivePeriod().getProperties().getDuration().getDuration())</td>
+						<td>@event.getEiEvent().getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>
 						
 						<td>
-							@form(routes.Events.editEvent(event.getHjid())){
-								<input type="submit" value="Edit" class="btn primary">
-							}
+							@event.marketContext
 						</td>		
 						
 						<td>
-							@form(routes.Events.deleteEvent(event.getHjid())){
+							@form(routes.Events.deleteEvent(event.getEiEvent().getHjid())){
 								<input type="submit" value="Delete" class="btn danger">
 							}
 						</td>						

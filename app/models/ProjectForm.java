@@ -1,22 +1,21 @@
 package models;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlAttribute;
 
 import play.data.validation.Constraints.Required;
 
-@Entity
+@Entity(name="Project")
 @Table(name="PROJECT")
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class ProjectForm{
-
-	@Column(name="projectname")
+	
 	@Required
 	private String projectName;
-	@Column(name="projecturi")
 	@Required
 	private String projectURI;
-	@Id
-	private long id;
+
+	@Id private long id;
 	
 	public ProjectForm(){
 		
@@ -27,6 +26,7 @@ public class ProjectForm{
 		// also need to add setter for the other two fields from find statement
 	}
 
+	@Column(name="PROJECTURI")
 	public String getProjectURI() {
 		return projectURI;
 	}
@@ -35,6 +35,7 @@ public class ProjectForm{
 		this.projectURI = projectURI;
 	}
 
+	@Column(name="PROJECTNAME")
 	public String getProjectName() {
 		return projectName;
 	}
@@ -43,6 +44,10 @@ public class ProjectForm{
 		this.projectName = projectName;
 	}
 
+
+    @Id
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
 	public long getId() {
 		return id;
 	}

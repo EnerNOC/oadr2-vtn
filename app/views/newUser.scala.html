@@ -1,0 +1,27 @@
+@(userForm: Form[UserForm], programs: Map[String, String])
+
+@import helper._
+
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.render) } 
+@main(Html("Create a User"), "") {
+	
+	@form(routes.Users.newUser()) {
+	
+        <fieldset>
+		    <!-- will eventually generate this ID -->
+		    <h3>Market Context</h3>    
+				@inputText(userForm("userName"), '_label -> "User Name")
+				@select(
+                	userForm("ProjectId"), 
+                	options(programs), 
+	                '_label -> "Program", '_default -> "-- Choose a program --",
+	                '_showConstraints -> false
+	            )
+		</fieldset>
+		
+        <div class="actions">
+            <input type="submit" value="Create this user" class="btn primary"> or 
+            <a href="@routes.Markets.projects()" class="btn">Cancel</a>     
+        </div>
+	}
+}
