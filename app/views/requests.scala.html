@@ -6,11 +6,7 @@
 
 @main(Html("Requests"), "Requests") {
 	<h3>On click</h3>
-	<div id=xmlOutput></div>
-	
-	<h3>On load</h3>
-	<div id=automatic></div>
-	
+	<div id=xmlOutput></div>	
 
 	<script>
 		$('#requestbutton').click(function(){
@@ -22,12 +18,6 @@
 							$('#xmlOutput').append(data);
 				});
 			$(this).text("Refresh");
-		});
-		
-		$.post('@routes.Requests.test()',
-				"",
-				function(data){
-					$('#automatic').append(data);
 		});
 	</script>
 }

@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -19,6 +22,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import models.ProjectForm;
+import models.StatusObject;
 
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
@@ -44,20 +48,27 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 public class Requests extends Controller{
+	static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
+	static EntityManager entityManager = entityManagerFactory.createEntityManager();
 		
 	public static Result requests() {
 		return ok(views.html.requests.render());
 	}
 	
+	@SuppressWarnings("unchecked")
+	@Transactional(readOnly=true)
 	public static Result displayPage(){
-		return ok(views.html.responseTable.render());
+		List<OadrResponse> listResponses = entityManager.createQuery("FROM OadrResponse").getResultList();
+		return ok(views.html.responseTable.render(listResponses));
 	}
 	
+	@Transactional
+	@SuppressWarnings("unchecked")
 	public static Result test(){
-		//String appendString = session().get("responseId") + session().get("responseCode") + session().get("responseDescription");
 		return redirect(routes.Requests.displayPage());
 	}
 	
+	@Transactional
 	public static Result marshalRequest() throws JAXBException{
 		Document document = null;
 		try {
@@ -110,6 +121,7 @@ public class Requests extends Controller{
 			//if its a created event send out a distribute event
 			else if(o instanceof OadrCreatedEvent){
 				OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
+				oCreatedEvent.getEiCreatedEvent().getVenID();
 				
 				//Be sure to set the response code correctly to 1-5 depending on how the event is handled, temp 200 for now
 				EiResponse eiResponse = new EiResponse()
@@ -125,11 +137,13 @@ public class Requests extends Controller{
 			//occurs after sending out a DistributeEvent
 			else if(o instanceof OadrResponse){
 				OadrResponse oResponse = (OadrResponse) o;
-				Logger.info(oResponse.getEiResponse().getRequestID() + " " + oResponse.getEiResponse().getResponseCode() + " " + oResponse.getEiResponse().getResponseDescription());
-				session("responseId", oResponse.getEiResponse().getRequestID());
-				session("responseCode", oResponse.getEiResponse().getResponseCode());
-				session("responseDescription", oResponse.getEiResponse().getResponseDescription());
-				Logger.info("" + session().size());
+				
+				createNewEm();
+				entityManager.persist(oResponse);
+				entityManager.getTransaction().commit();
+				
+				createNewEm();
+				Logger.info("" + entityManager.createQuery("FROM OadrResponse").getResultList().size());
 				return ok("Okey dokey\n");
 				//this is where the Comet/Websocket stuff will happen to populate the table!
 			}
@@ -150,6 +164,13 @@ public class Requests extends Controller{
 		}
 		catch(Exception e){
 			return null;
+		}
+	}
+	
+	public static void createNewEm(){
+		entityManager = entityManagerFactory.createEntityManager();
+		if(!entityManager.getTransaction().isActive()){
+			entityManager.getTransaction().begin();
 		}
 	}
 

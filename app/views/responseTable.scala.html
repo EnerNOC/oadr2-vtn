@@ -1,12 +1,22 @@
+@(responseList: List[OadrResponse])
+
 <table>
 	<thead>
 		<tr>
-			<th>Test</th>
-			<th>Table</th>
+			<th>Response ID</th>
+			<th>Response Code</th>
+			<th>Response Description</th>
 		</tr>
 	</thead>
 	<tfoot>
 	</tfoot>
 	<tbody>
+			@for(response <- responseList){
+				<tr>
+					<td>@response.getEiResponse().getRequestID()</td>
+					<td>@response.getEiResponse().getResponseCode()</td>
+					<td>@response.getEiResponse().getResponseDescription()</td>
+				</tr>
+			}
 	</tbody>
 </table>

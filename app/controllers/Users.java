@@ -23,6 +23,9 @@ import play.mvc.Result;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
 
+/*
+ * Delete is not working yet, sends some strange error about no data being sent and stuff
+ */
 public class Users extends Controller {
 	static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
 	static EntityManager entityManager = entityManagerFactory.createEntityManager();
