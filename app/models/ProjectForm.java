@@ -44,7 +44,6 @@ public class ProjectForm{
 		this.projectName = projectName;
 	}
 
-
     @Id
     @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.AUTO)

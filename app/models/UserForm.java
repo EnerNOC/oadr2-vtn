@@ -1,5 +1,9 @@
 package models;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
@@ -9,13 +13,26 @@ import play.data.validation.Constraints.Required;
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class UserForm{
 	
-	@Required
-	private String userName;
-	@Required
-	private String projectId;
-
-	@Id private long id;
+	public String programName;
 	
+	@Required
+	@Column(name = "USERNAME")
+	private String userName;
+	
+	@Required
+	@Column(name = "PROJECTID")
+	private String projectId;
+	
+	@ElementCollection
+	@Column(name = "VENS")
+	private List <String> vens = new ArrayList<String>();
+	//private List<VenForm> vens;
+	
+    @Id
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
+		
 	public UserForm(){
 		
 	}
@@ -29,7 +46,6 @@ public class UserForm{
 		return userName;
 	}
 
-	@Column(name = "USERNAME")
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
@@ -47,11 +63,34 @@ public class UserForm{
 		return id;
 	}
 
-    @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
 	public void setId(long id) {
 		this.id = id;
 	}
+
+	public List <String> getVens() {
+		return vens;
+	}
+
+	public void setVens(List <String> vens) {
+		this.vens = vens;
+	}
+
+	/*
+	public List<VenForm> getVens() {
+		return vens;
+	}
+
+	@OneToMany(cascade=CascadeType.ALL)
+	@JoinTable(name = "UserVen", joinColumns = {
+	@JoinColumn(name="USERID", unique = true) 
+	},
+	inverseJoinColumns = {
+	@JoinColumn(name="VENID")
+	}
+	)
+	public void setVens(List<VenForm> vens) {
+		this.vens = vens;
+	}
+	*/
 
 }

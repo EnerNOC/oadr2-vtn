@@ -30,7 +30,7 @@
             @for(user <- userList){ 
             	<tr>
 	            	<td>@user.getUserName()</td>
-	            	<td>@user.getProjectId()</td>	            	
+	            	<td>@user.programName</td>	            	
 					<td>@form(routes.Users.deleteUser(user.getId())){
 							<input type="submit" value="Delete" class="btn danger">
 						}

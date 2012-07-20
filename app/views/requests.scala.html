@@ -5,5 +5,29 @@
 @import helper.twitterBootstrap._
 
 @main(Html("Requests"), "Requests") {
+	<h3>On click</h3>
+	<div id=xmlOutput></div>
 	
+	<h3>On load</h3>
+	<div id=automatic></div>
+	
+
+	<script>
+		$('#requestbutton').click(function(){
+			$(this).text("Loading request...");
+				$.post('@routes.Requests.test()',
+						"",
+						function(data){
+							$('#xmlOutput').empty();
+							$('#xmlOutput').append(data);
+				});
+			$(this).text("Refresh");
+		});
+		
+		$.post('@routes.Requests.test()',
+				"",
+				function(data){
+					$('#automatic').append(data);
+		});
+	</script>
 }

@@ -61,6 +61,8 @@ public class Events extends Controller {
 	  }	  
 	  createNewEm();	  
 	  List<EiEvent> eiEvents = entityManager.createQuery("FROM org.enernoc.open.oadr2.model.EiEvent").getResultList();
+	  Comparator<EiEvent> comparator = new EiEventComparator();
+	  Collections.sort(eiEvents, comparator);
 	  List<EiEventForm> eiEventForms = new ArrayList<EiEventForm>();
 	  for(EiEvent event : eiEvents){
 		  EiEventForm tempForm = new EiEventForm(event);
@@ -68,8 +70,6 @@ public class Events extends Controller {
 		  tempForm.marketContext = entityManager.find(ProjectForm.class, (long)eventRelation.getProjectId()).getProjectName();
 		  eiEventForms.add(tempForm);
 	  }
-	  Comparator<EiEvent> comparator = new EiEventComparator();
-	  Collections.sort(eiEvents, comparator);
 	  
 	  return ok(views.html.events.render(eiEventForms, new EiEventForm())); //not actually an error
   }

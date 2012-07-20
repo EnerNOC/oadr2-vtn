@@ -1,5 +1,6 @@
 package controllers;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,9 +9,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
+import org.enernoc.open.oadr2.model.EiEvent;
+
+import models.ProjectEventRelation;
 import models.ProjectForm;
 import models.UserForm;
+import play.Logger;
 import play.data.Form;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -29,7 +35,10 @@ public class Users extends Controller {
 	@SuppressWarnings("unchecked")
 	public static Result users(){
 		  createNewEm();
-		  List<UserForm> blankArray = entityManager.createQuery("FROM Users").getResultList();	  
+		  List<UserForm> blankArray = entityManager.createQuery("FROM Users").getResultList();
+		  for(UserForm user : blankArray){
+			  user.programName = entityManager.find(ProjectForm.class, Long.parseLong(user.getProjectId())).getProjectName();
+		  }
 		  return ok(views.html.users.render(blankArray));
 	}
 	
@@ -39,35 +48,40 @@ public class Users extends Controller {
 	
 	@Transactional
 	public static Result newUser(){
-		  createNewEm();
-		  Form<ProjectForm> filledForm = form(ProjectForm.class).bindFromRequest();
+		  Form<UserForm> filledForm = form(UserForm.class).bindFromRequest();
 		  if(filledForm.hasErrors()){
-			  //do some error handling
-			  return badRequest();
+	    	  addFlashError(filledForm.errors());
+			  return badRequest(views.html.newUser.render(filledForm, makeProjectMap()));
 		  }
 		  else{
-			  ProjectForm newProject = filledForm.get();
-			  //Logger.info(newProject.getProjectName() + " " + newProject.getProjectURI() + " " + newProject.getId());
-			  entityManager.persist(newProject);
+			  createNewEm();
+			  UserForm newUser = filledForm.get();entityManager.persist(newUser);
 			  entityManager.getTransaction().commit();
 			  flash("success", "Program as been created");
 		  }
-		  return redirect(routes.Markets.projects());
+		  return redirect(routes.Users.users());
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Transactional(readOnly=true)
 	public static Map<String, String> makeProjectMap(){
-		  List<ProjectForm> projectList = entityManager.createQuery("FROM Project").getResultList();
-		  Map<String, String> projectMap = new HashMap<String, String>();
-		  for(ProjectForm project : projectList){
-			  projectMap.put(project.getId() + "", project.getProjectName());
-		  }
-		  return projectMap;
+		createNewEm();
+		List<ProjectForm> projectList = entityManager.createQuery("FROM Project").getResultList();
+		Map<String, String> projectMap = new HashMap<String, String>();
+		for(ProjectForm project : projectList){
+			projectMap.put(project.getId() + "", project.getProjectName());
+		}
+		
+		return projectMap;
 	}
 	
+	@Transactional
 	public static Result deleteUser(long id){
-		return TODO;
+		  createNewEm();
+		  entityManager.remove(entityManager.find(UserForm.class, id));
+		  entityManager.getTransaction().commit();
+	      flash("success", "Event has been deleted");
+	      return redirect(routes.Events.events());
 	}
 	
 	public static void createNewEm(){
@@ -76,4 +90,13 @@ public class Users extends Controller {
 			entityManager.getTransaction().begin();
 		}
 	}
+	
+	  public static void addFlashError(Map<String, List<ValidationError>> errors){
+		  for(String key : errors.keySet()){
+			  List<ValidationError> currentError = errors.get(key);
+			  for(ValidationError error : currentError){
+				  flash(key, error.message());
+			  }
+		  }	  
+	  }
 }

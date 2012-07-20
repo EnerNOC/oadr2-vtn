@@ -3,25 +3,29 @@
 @import helper._
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.render) } 
-@main(Html("Create a User"), "") {
+
+@informationGroup(field: Field, className: String = "profile") = {
+
+}
+
+@main(Html("Create a Customer"), "") {
 	
 	@form(routes.Users.newUser()) {
 	
         <fieldset>
 		    <!-- will eventually generate this ID -->
-		    <h3>Market Context</h3>    
-				@inputText(userForm("userName"), '_label -> "User Name")
+		    <h3>Customer Information</h3>    
+				@inputText(userForm("userName"), '_label -> "VEN ID")
 				@select(
                 	userForm("ProjectId"), 
                 	options(programs), 
 	                '_label -> "Program", '_default -> "-- Choose a program --",
 	                '_showConstraints -> false
 	            )
+	            <div class="actions">
+	            	<input type="submit" value="Create this customer" class="btn primary"> or 
+	            	<a href="@routes.Users.users()" class="btn">Cancel</a>     
+        		</div>
 		</fieldset>
-		
-        <div class="actions">
-            <input type="submit" value="Create this user" class="btn primary"> or 
-            <a href="@routes.Markets.projects()" class="btn">Cancel</a>     
-        </div>
 	}
 }

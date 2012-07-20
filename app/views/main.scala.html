@@ -10,7 +10,7 @@
 	    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/timepicker.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/enoc-node-bullet.png")">
-		<script type="text/javascript" src='@routes.Assets.at("javascripts/jquery-1.7.1.min.js")'></script>
+        <script type="text/javascript" src='@routes.Assets.at("javascripts/jquery-1.7.1.min.js")'></script>
     </head>
     <body>
         
@@ -41,6 +41,9 @@
                     @if(nav == "Users"){
                     	<a href=@routes.Users.blankUser() id="add" class="btn success")>Create User</a>
                     }
+                    @if(nav == "Requests"){
+                    	<a id="requestbutton" class="btn">Refresh</a>
+                    }
                 </div>
 
                 <div class="row">
@@ -59,7 +62,6 @@
             </footer>
             
         </div>
-        <script src="js/jquery.js"></script>
 		<script type="text/javascript" src='@routes.Assets.at("javascripts/jquery-1.7.1.min.js")'></script>
 		<script type="text/javascript" src='@routes.Assets.at("javascripts/bootstrap-datepicker.js")'></script>
 		<script type="text/javascript" src='@routes.Assets.at("javascripts/bootstrap-timepicker.js")'></script>
