@@ -78,14 +78,15 @@ public class Users extends Controller {
 		return projectMap;
 	}
 	
-	@Transactional
-	public static Result deleteUser(long id){
+	  @Transactional
+	  //Deletes an event based on the id
+	  public static Result deleteUser(Long id){
 		  createNewEm();
 		  entityManager.remove(entityManager.find(UserForm.class, id));
 		  entityManager.getTransaction().commit();
-	      flash("success", "Event has been deleted");
-	      return redirect(routes.Events.events());
-	}
+	      flash("success", "Customer has been deleted");
+	      return redirect(routes.Users.users());
+	  }
 	
 	public static void createNewEm(){
 		entityManager = entityManagerFactory.createEntityManager();
