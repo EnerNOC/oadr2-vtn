@@ -59,12 +59,16 @@ public class Requests extends Controller{
 	@Transactional(readOnly=true)
 	public static Result displayPage(){
 		List<OadrResponse> listResponses = entityManager.createQuery("FROM OadrResponse").getResultList();
-		return ok(views.html.responseTable.render(listResponses));
+		List<OadrCreatedEvent> listCreatedEvents = entityManager.createQuery("FROM OadrCreatedEvent").getResultList();
+		List<OadrRequestEvent> listRequestEvents = entityManager.createQuery("FROM OadrRequestEvent").getResultList();
+		return ok(views.html.responseTable.render(listResponses, listCreatedEvents, listRequestEvents));
 	}
 	
 	@Transactional
 	@SuppressWarnings("unchecked")
 	public static Result test(){
+		Logger.info("Refreshed");
+		displayObjects();
 		return redirect(routes.Requests.displayPage());
 	}
 	
@@ -92,7 +96,6 @@ public class Requests extends Controller{
 			//if RequestEvent send out a response!
 			if(o instanceof OadrRequestEvent){						
 				OadrRequestEvent oRequestEvent = (OadrRequestEvent) o;
-				Logger.info(oRequestEvent.toString());
 				EiResponse eiResponse = new EiResponse();
 				/*
 				 * 1xx Informational - Request received, continuing process
@@ -101,10 +104,13 @@ public class Requests extends Controller{
 				 * 4xx Requester Error - The request contains bad syntax or cannot be fulfilled
 				 * 5xx Responder Error - The responder failed to fulfill an apparently valid request
 				 */
-	
 				eiResponse.setRequestID(oRequestEvent.getEiRequestEvent().getRequestID());
 				eiResponse.setResponseCode("200");
 				eiResponse.setResponseDescription("Optional! But I'm here <3");
+
+				createNewEm();
+				entityManager.persist(oRequestEvent);
+				entityManager.getTransaction().commit();
 							
 				OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
 				//Need to find out how to get EiEvent(s) and add them to this Distribute Event
@@ -122,6 +128,10 @@ public class Requests extends Controller{
 			else if(o instanceof OadrCreatedEvent){
 				OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
 				oCreatedEvent.getEiCreatedEvent().getVenID();
+
+				createNewEm();
+				entityManager.persist(oCreatedEvent);
+				entityManager.getTransaction().commit();
 				
 				//Be sure to set the response code correctly to 1-5 depending on how the event is handled, temp 200 for now
 				EiResponse eiResponse = new EiResponse()
@@ -143,9 +153,7 @@ public class Requests extends Controller{
 				entityManager.getTransaction().commit();
 				
 				createNewEm();
-				Logger.info("" + entityManager.createQuery("FROM OadrResponse").getResultList().size());
 				return ok("Okey dokey\n");
-				//this is where the Comet/Websocket stuff will happen to populate the table!
 			}
 		}
 		return badRequest("No data");
@@ -173,6 +181,15 @@ public class Requests extends Controller{
 			entityManager.getTransaction().begin();
 		}
 	}
-
 	
+	@Transactional
+	public static List<StatusObject> displayObjects(){
+		createNewEm();/*
+		for(Object o : entityManager.createNativeQuery("SELECT EiEvent.hjid, Users.id" +
+				" FROM EiEvent INNER JOIN Users ON EiEvent.hjid=Users.id").getResultList()){
+			Logger.info(o.getClass() + "");
+		}
+		*/
+		return null;
+	}
 }

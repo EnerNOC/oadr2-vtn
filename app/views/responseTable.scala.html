@@ -1,5 +1,6 @@
-@(responseList: List[OadrResponse])
+@(responseList: List[OadrResponse], createdEventList: List[OadrCreatedEvent], requestEventList: List[OadrRequestEvent])
 
+<h3>Responses</h3>
 <table>
 	<thead>
 		<tr>
@@ -17,6 +18,58 @@
 					<td>@response.getEiResponse().getResponseCode()</td>
 					<td>@response.getEiResponse().getResponseDescription()</td>
 				</tr>
+			}
+	</tbody>
+</table>
+
+<h3>Created Events</h3>
+<table>
+	<thead>
+		<tr>
+			<th>VEN ID</th>
+			<th>Opt Status</th>
+		</tr>
+	</thead>
+	<tfoot>
+	</tfoot>
+	<tbody>
+		@for(created <- createdEventList){
+			<tr>
+				<td>@created.getEiCreatedEvent().getVenID()</td>
+				<td>
+					@if(created.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString() == "OPT_OUT"){
+						<a disabled="disabled" class="btn danger">Opted Out</a>
+					}else{
+						@if(created.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString() == "OPT_IN"){
+							<a disabled="disabled" class="btn success">Opted In</a>
+						}else{
+							<a disabled="disabled" class="btn">Pending</a>
+						}
+					}
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+<h3>Request Events</h3>
+<table>
+	<thead>
+		<tr>
+			<th>VEN ID</th>
+			<th>Request ID</th>
+			<th>Reply Limit</th>
+		</tr>
+	</thead>
+	<tfoot>
+	</tfoot>
+	<tbody>
+		@for(request <- requestEventList){
+			<tr>
+				<td>@request.getEiRequestEvent().getVenID()</td>
+				<td>@request.getEiRequestEvent().getRequestID</td>				
+				<td>@request.getEiRequestEvent().getReplyLimit()</td>
+			</tr>
 			}
 	</tbody>
 </table>

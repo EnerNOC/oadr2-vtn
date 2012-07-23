@@ -19,7 +19,7 @@
                 <div class="container">
                     <a class="brand" href="@routes.Events.events()">Events</a>
                     <a class="brand" href="@routes.Markets.projects()">Programs</a>
-                    <a class="brand" href="@routes.Users.users()">Users</a>
+                    <a class="brand" href="@routes.Users.users()">Customers</a>
                     <a class="brand" href="@routes.Requests.requests()">Requests</a>
                 </div>
             </div>
@@ -38,8 +38,8 @@
                     @if(nav == "Programs"){
                     	<a href=@routes.Markets.blankProject() id="add" class="btn success")>Create Program</a>
                     }
-                    @if(nav == "Users"){
-                    	<a href=@routes.Users.blankUser() id="add" class="btn success")>Create User</a>
+                    @if(nav == "Customers"){
+                    	<a href=@routes.Users.blankUser() id="add" class="btn success")>Create Customer</a>
                     }
                     @if(nav == "Requests"){
                     	<a id="requestbutton" class="btn">Refresh</a>

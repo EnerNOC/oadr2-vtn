@@ -9,6 +9,7 @@ import javax.persistence.Persistence;
 
 import models.ProjectEventRelation;
 import models.ProjectForm;
+import models.UserForm;
 
 import org.enernoc.open.oadr2.model.EiEvent.*;
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -65,10 +66,16 @@ public static Result deleteProject(Long id){
 	  createNewEm();
 	  ProjectForm p = entityManager.find(ProjectForm.class, id);
 	  List<ProjectEventRelation> relations = entityManager.createQuery("FROM ProjectEvent").getResultList();
-	  
+	  List<UserForm> users = entityManager.createQuery("FROM Users").getResultList();
 	  for(ProjectEventRelation relation : relations){
 		  if(relation.getProjectId() == id){
 			  flash("failure", "Cannot delete program. Please delete events using the program first");
+			  return redirect(routes.Markets.projects());
+		  }
+	  }
+	  for(UserForm user : users){
+		  if(Long.parseLong(user.getProjectId()) == id){
+			  flash("failure", "Cannot delete program. Please delete customers using the program first");
 			  return redirect(routes.Markets.projects());
 		  }
 	  }

@@ -16,8 +16,17 @@ public class StatusObject {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	
-	@Column(name = "NAME")
-	private String name;
+	@Column(name = "EVENTID")
+	private String eventId;
+	
+	@Column(name = "CUSTOMERID")
+	private String customerId;
+	
+	@Column(name = "OPTSTATUS")
+	private String optStatus;
+	
+	@Column(name = "PROGRAM")
+	private String program;
 	
 	public long getId() {
 		return id;
@@ -25,12 +34,29 @@ public class StatusObject {
 	public void setId(long id) {
 		this.id = id;
 	}
-	
-	public String getName() {
-		return name;
+	public String getEventId() {
+		return eventId;
 	}
-	public void setName(String name) {
-		this.name = name;
+	public void setEventId(String eventId) {
+		this.eventId = eventId;
+	}
+	public String getCustomerId() {
+		return customerId;
+	}
+	public void setCustomerId(String customerId) {
+		this.customerId = customerId;
+	}
+	public String getOptStatus() {
+		return optStatus;
+	}
+	public void setOptStatus(String optStatus) {
+		this.optStatus = optStatus;
+	}
+	public String getProgram() {
+		return program;
+	}
+	public void setProgram(String program) {
+		this.program = program;
 	}
 	
 	

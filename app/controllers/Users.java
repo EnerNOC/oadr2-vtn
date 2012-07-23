@@ -60,7 +60,7 @@ public class Users extends Controller {
 			  createNewEm();
 			  UserForm newUser = filledForm.get();entityManager.persist(newUser);
 			  entityManager.getTransaction().commit();
-			  flash("success", "Program as been created");
+			  flash("success", "Customer as been created");
 		  }
 		  return redirect(routes.Users.users());
 	}
