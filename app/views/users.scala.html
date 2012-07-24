@@ -20,7 +20,7 @@
         <table class="zebra-striped">
             <thead>
                 <tr>
-                	<th>User Name</th>
+                	<th>VEN ID</th>
                 	<th>Program Name</th>
                 </tr>
             </thead>
@@ -29,7 +29,7 @@
             <tbody>
             @for(user <- userList){ 
             	<tr>
-	            	<td>@user.getUserName()</td>
+	            	<td>@user.getVenID()</td>
 	            	<td>@user.programName</td>	            	
 					<td>@form(routes.Users.deleteUser(user.getId())){
 							<input type="submit" value="Delete" class="btn danger">

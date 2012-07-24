@@ -16,8 +16,8 @@ public class UserForm{
 	public String programName;
 	
 	@Required
-	@Column(name = "USERNAME")
-	private String userName;
+	@Column(name = "VENID")
+	private String venID;
 	
 	@Required
 	@Column(name = "PROJECTID")
@@ -42,12 +42,12 @@ public class UserForm{
 		// also need to add setter for the other two fields from find statement
 	}
 
-	public String getUserName() {
-		return userName;
+	public String getVenID() {
+		return venID;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
+	public void setVenID(String userName) {
+		this.venID = userName;
 	}
 
 	public String getProjectId() {
@@ -74,23 +74,5 @@ public class UserForm{
 	public void setVens(List <String> vens) {
 		this.vens = vens;
 	}
-
-	/*
-	public List<VenForm> getVens() {
-		return vens;
-	}
-
-	@OneToMany(cascade=CascadeType.ALL)
-	@JoinTable(name = "UserVen", joinColumns = {
-	@JoinColumn(name="USERID", unique = true) 
-	},
-	inverseJoinColumns = {
-	@JoinColumn(name="VENID")
-	}
-	)
-	public void setVens(List<VenForm> vens) {
-		this.vens = vens;
-	}
-	*/
 
 }

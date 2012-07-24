@@ -15,7 +15,7 @@
         <fieldset>
 		    <!-- will eventually generate this ID -->
 		    <h3>Customer Information</h3>    
-				@inputText(userForm("userName"), '_label -> "VEN ID")
+				@inputText(userForm("venID"), '_label -> "VEN ID")
 				@select(
                 	userForm("ProjectId"), 
                 	options(programs), 
@@ -24,7 +24,7 @@
 	            )
 	            <div class="actions">
 	            	<input type="submit" value="Create this customer" class="btn primary"> or 
-	            	<a href="@routes.Users.users()" class="btn">Cancel</a>     
+	            	<a href="@routes.Users.users()" class="btn">Cancel</a>
         		</div>
 		</fieldset>
 	}

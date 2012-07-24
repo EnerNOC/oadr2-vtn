@@ -20,6 +20,7 @@ import models.ProjectEventRelation;
 import models.ProjectForm;
 
 import org.enernoc.open.oadr2.model.EiEvent;
+import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
@@ -91,6 +92,8 @@ public static Result blankEvent(){
 	  else{		  
 		  EiEventForm newEventForm = filledForm.get();
 		  EiEvent newEvent = newEventForm.toEiEvent();
+		  String contextName = entityManager.find(ProjectForm.class, Long.parseLong(newEventForm.marketContext)).getProjectName();
+		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
 		  entityManager.persist(newEvent);
 		  entityManager.getTransaction().commit();
 		  flash("success", "Event as been created");

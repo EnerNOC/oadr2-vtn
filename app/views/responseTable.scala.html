@@ -1,75 +1,36 @@
-@(responseList: List[OadrResponse], createdEventList: List[OadrCreatedEvent], requestEventList: List[OadrRequestEvent])
+@(statusList: List[StatusObject])
 
-<h3>Responses</h3>
-<table>
-	<thead>
-		<tr>
-			<th>Response ID</th>
-			<th>Response Code</th>
-			<th>Response Description</th>
-		</tr>
-	</thead>
-	<tfoot>
-	</tfoot>
-	<tbody>
-			@for(response <- responseList){
-				<tr>
-					<td>@response.getEiResponse().getRequestID()</td>
-					<td>@response.getEiResponse().getResponseCode()</td>
-					<td>@response.getEiResponse().getResponseDescription()</td>
-				</tr>
-			}
-	</tbody>
-</table>
-
-<h3>Created Events</h3>
+<h3>VEN Status</h3>
 <table>
 	<thead>
 		<tr>
 			<th>VEN ID</th>
-			<th>Opt Status</th>
+			<th>Event ID</th>
+			<th>Program</th>
+			<th>Status</th>
+			<th>Last Response</th>
 		</tr>
-	</thead>
-	<tfoot>
-	</tfoot>
+	<tfoot></tfoot>
 	<tbody>
-		@for(created <- createdEventList){
+		@for(status <- statusList){
 			<tr>
-				<td>@created.getEiCreatedEvent().getVenID()</td>
+				<td>@status.getVenID()</td>
+				<td>@status.getEventID()</td>
+				<td>@status.getProgram()</td>
 				<td>
-					@if(created.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString() == "OPT_OUT"){
+					@if(status.getOptStatus == "OPT_OUT"){
 						<a disabled="disabled" class="btn danger">Opted Out</a>
 					}else{
-						@if(created.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString() == "OPT_IN"){
+						@if(status.getOptStatus == "OPT_IN"){
 							<a disabled="disabled" class="btn success">Opted In</a>
 						}else{
 							<a disabled="disabled" class="btn">Pending</a>
 						}
 					}
 				</td>
+				<td>@status.displayTime()</td>
 			</tr>
 		}
-	</tbody>
-</table>
-
-<h3>Request Events</h3>
-<table>
-	<thead>
-		<tr>
-			<th>VEN ID</th>
-			<th>Request ID</th>
-			<th>Reply Limit</th>
-		</tr>
-	</thead>
-	<tfoot>
-	</tfoot>
-	<tbody>
-		@for(request <- requestEventList){
-			<tr>
-				<td>@request.getEiRequestEvent().getVenID()</td>
-				<td>@request.getEiRequestEvent().getRequestID</td>				
-				<td>@request.getEiRequestEvent().getReplyLimit()</td>
-			</tr>
-			}
+		
 	</tbody>
 </table>

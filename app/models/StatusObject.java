@@ -1,5 +1,9 @@
 package models;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -17,10 +21,10 @@ public class StatusObject {
 	private long id;
 	
 	@Column(name = "EVENTID")
-	private String eventId;
+	private String eventID;
 	
-	@Column(name = "CUSTOMERID")
-	private String customerId;
+	@Column(name = "VENID")
+	private String venID;
 	
 	@Column(name = "OPTSTATUS")
 	private String optStatus;
@@ -28,23 +32,26 @@ public class StatusObject {
 	@Column(name = "PROGRAM")
 	private String program;
 	
+	@Column(name = "TIME")
+	private Date time;
+	
 	public long getId() {
 		return id;
 	}
 	public void setId(long id) {
 		this.id = id;
 	}
-	public String getEventId() {
-		return eventId;
+	public String getEventID() {
+		return eventID;
 	}
-	public void setEventId(String eventId) {
-		this.eventId = eventId;
+	public void setEventID(String eventId) {
+		this.eventID = eventId;
 	}
-	public String getCustomerId() {
-		return customerId;
+	public String getVenID() {
+		return venID;
 	}
-	public void setCustomerId(String customerId) {
-		this.customerId = customerId;
+	public void setVenID(String venID) {
+		this.venID = venID;
 	}
 	public String getOptStatus() {
 		return optStatus;
@@ -57,6 +64,25 @@ public class StatusObject {
 	}
 	public void setProgram(String program) {
 		this.program = program;
+	}
+	
+	@Override
+	public String toString(){
+		return ("\nVEN ID: " + this.venID +
+				"\nEvent ID: " + this.eventID +
+				"\nProgram: " + this.program + 
+				"\nStatus: " + this.optStatus +
+				"\nTime: " + this.time.toString());
+	}
+	public Date getTime() {
+		return time;
+	}
+	public void setTime(Date time) {
+		this.time = time;
+	}
+	public String displayTime(){
+		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy @ h:mm aa");
+		return(dateFormat.format(time));
 	}
 	
 	

@@ -34,12 +34,8 @@
 						<td>@event.getEiEvent().getEventDescriptor().getEventStatus()</td>
 						<td>@eventForm.displayReadableStart(event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().toString())</td>
 						<td>@eventForm.displayReadableDuration(event.getEiEvent().getEiActivePeriod().getProperties().getDuration().getDuration())</td>
-						<td>@event.getEiEvent().getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>
-						
-						<td>
-							@event.marketContext
-						</td>		
-						
+						<td>@event.getEiEvent().getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>						
+						<td>@event.getEiEvent().getEventDescriptor().getEiMarketContext().getMarketContext()</td>							
 						<td>
 							@form(routes.Events.deleteEvent(event.getEiEvent().getHjid())){
 								<input type="submit" value="Delete" class="btn danger">

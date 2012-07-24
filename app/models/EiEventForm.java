@@ -16,6 +16,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.enernoc.open.oadr2.model.DurationPropType;
 import org.enernoc.open.oadr2.model.EiEvent;
+import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;

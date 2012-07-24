@@ -6,9 +6,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.text.DateFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -23,7 +27,9 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import models.ProjectForm;
 import models.StatusObject;
+import models.UserForm;
 
+import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
@@ -36,6 +42,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.libs.Comet;
 import play.libs.F;
@@ -50,29 +57,26 @@ import play.mvc.Result;
 public class Requests extends Controller{
 	static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
 	static EntityManager entityManager = entityManagerFactory.createEntityManager();
-		
+	
 	public static Result requests() {
 		return ok(views.html.requests.render());
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Transactional(readOnly=true)
+	@SuppressWarnings("unchecked")
 	public static Result displayPage(){
-		List<OadrResponse> listResponses = entityManager.createQuery("FROM OadrResponse").getResultList();
-		List<OadrCreatedEvent> listCreatedEvents = entityManager.createQuery("FROM OadrCreatedEvent").getResultList();
-		List<OadrRequestEvent> listRequestEvents = entityManager.createQuery("FROM OadrRequestEvent").getResultList();
-		return ok(views.html.responseTable.render(listResponses, listCreatedEvents, listRequestEvents));
+		List<StatusObject> listStatusObjects = entityManager.createQuery("FROM StatusObject").getResultList();
+		return ok(views.html.responseTable.render(listStatusObjects));
 	}
 	
 	@Transactional
 	@SuppressWarnings("unchecked")
-	public static Result test(){
-		Logger.info("Refreshed");
-		displayObjects();
+	public static Result ajaxDisplay(){
 		return redirect(routes.Requests.displayPage());
 	}
 	
 	@Transactional
+	//need to break apart, too big, each instanceof separate method
 	public static Result marshalRequest() throws JAXBException{
 		Document document = null;
 		try {
@@ -91,8 +95,7 @@ public class Requests extends Controller{
 			Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
 			Marshaller marshaller = jaxbContext.createMarshaller();
 			Object o = unmarshaller.unmarshal(document);
-			
-			//should make all instance ofs own methods probably, also still not do instanceof cause bad		
+				
 			//if RequestEvent send out a response!
 			if(o instanceof OadrRequestEvent){						
 				OadrRequestEvent oRequestEvent = (OadrRequestEvent) o;
@@ -111,6 +114,8 @@ public class Requests extends Controller{
 				createNewEm();
 				entityManager.persist(oRequestEvent);
 				entityManager.getTransaction().commit();
+				
+				onRequestEvent(oRequestEvent);
 							
 				OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
 				//Need to find out how to get EiEvent(s) and add them to this Distribute Event
@@ -129,6 +134,8 @@ public class Requests extends Controller{
 				OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
 				oCreatedEvent.getEiCreatedEvent().getVenID();
 
+				onCreatedEvent(oCreatedEvent);
+				
 				createNewEm();
 				entityManager.persist(oCreatedEvent);
 				entityManager.getTransaction().commit();
@@ -144,6 +151,7 @@ public class Requests extends Controller{
 				response().setContentType("application/xml");
 				return ok(sw.toString() + '\n');
 			}
+			/*
 			//occurs after sending out a DistributeEvent
 			else if(o instanceof OadrResponse){
 				OadrResponse oResponse = (OadrResponse) o;
@@ -151,17 +159,17 @@ public class Requests extends Controller{
 				createNewEm();
 				entityManager.persist(oResponse);
 				entityManager.getTransaction().commit();
-				
-				createNewEm();
-				return ok("Okey dokey\n");
 			}
+			*/
 		}
-		return badRequest("No data");
+		return redirect(routes.Requests.requests());
 	}
 	
-	//seems insanely fking stupid to have to parse an application/xml as bytes then go through the doc builder
-	//in order to get a Document, would MUCH prefer to use .getXml() but also stupid and returns null 
-	//as only works for text/xml
+	/*
+	 * seems insanely fking stupid to have to parse an application/xml as bytes then go through the doc builder
+	 * in order to get a Document, would MUCH prefer to use .getXml() but also stupid and returns null 
+	 * as only works for text/xml
+	 */
 	public static Document loadXmlFromString(ByteArrayInputStream xmlByteStream){
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
@@ -183,13 +191,45 @@ public class Requests extends Controller{
 	}
 	
 	@Transactional
-	public static List<StatusObject> displayObjects(){
-		createNewEm();/*
-		for(Object o : entityManager.createNativeQuery("SELECT EiEvent.hjid, Users.id" +
-				" FROM EiEvent INNER JOIN Users ON EiEvent.hjid=Users.id").getResultList()){
-			Logger.info(o.getClass() + "");
+	//hackish way to do this, i'm too stupid to figure out how to add a date
+	//and use the queries properly
+	public static void onRequestEvent(OadrRequestEvent requestEvent){
+		StatusObject statusObject = new StatusObject();
+		statusObject.setTime(new Date());
+		createNewEm();
+		statusObject.setVenID(requestEvent.getEiRequestEvent().getVenID());
+		
+		List<UserForm> users = entityManager.createQuery("FROM Users").getResultList();
+		for(UserForm user : users){
+			if(user.getVenID().equals(requestEvent.getEiRequestEvent().getVenID())){
+				ProjectForm p = entityManager.find(ProjectForm.class, Long.parseLong(user.getProjectId()));
+				statusObject.setProgram(p.getProjectName());
+				break;
+			}
 		}
-		*/
-		return null;
+		List<EiEvent> events = entityManager.createQuery("FROM EiEvent").getResultList();
+		for(EiEvent event: events){
+			if(event.getEventDescriptor().getEiMarketContext().getMarketContext().equals(statusObject.getProgram())){
+				statusObject.setEventID(event.getEventDescriptor().getEventID());
+				break;
+			}
+		}
+		entityManager.persist(statusObject);
+		entityManager.getTransaction().commit();
 	}
+
+	@Transactional
+	public static void onCreatedEvent(OadrCreatedEvent createdEvent){
+		createNewEm();
+		List<StatusObject> statusList = entityManager.createQuery("FROM StatusObject").getResultList();
+		for(StatusObject status : statusList){
+			if(status.getVenID().equals(createdEvent.getEiCreatedEvent().getVenID())){
+				status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
+				status.setTime(new Date());
+				createNewEm();
+				entityManager.merge(status);
+				entityManager.getTransaction().commit();
+			}
+		}
+	}	
 }
