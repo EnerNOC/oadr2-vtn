@@ -2,6 +2,8 @@ package controllers;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -9,6 +11,7 @@ import javax.persistence.Persistence;
 
 import models.ProjectEventRelation;
 import models.ProjectForm;
+import models.StatusObject;
 import models.UserForm;
 
 import org.enernoc.open.oadr2.model.EiEvent.*;
@@ -35,8 +38,16 @@ public class Markets extends Controller {
 @Transactional
 public static Result projects(){
 	  createNewEm();
-	  List<ProjectForm> blankArray = entityManager.createQuery("FROM Project").getResultList();	  
-	  return ok(views.html.projects.render(blankArray));
+	  List<ProjectForm> programs = entityManager.createQuery("FROM Project").getResultList();
+	  
+	  class ProjectFormComparator implements Comparator<ProjectForm>{
+			public int compare(ProjectForm projectOne, ProjectForm projectTwo){
+				return projectOne.getProjectName().compareTo(projectTwo.getProjectName());
+			}
+	  }
+	  Collections.sort(programs, new ProjectFormComparator());
+	  
+	  return ok(views.html.projects.render(programs));
   }
   
   public static Result blankProject(){

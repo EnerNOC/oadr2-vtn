@@ -1,9 +1,11 @@
 package controllers;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -13,6 +15,7 @@ import org.enernoc.open.oadr2.model.EiEvent;
 
 import models.ProjectEventRelation;
 import models.ProjectForm;
+import models.StatusObject;
 import models.UserForm;
 import play.Logger;
 import play.data.Form;
@@ -38,11 +41,19 @@ public class Users extends Controller {
 	@SuppressWarnings("unchecked")
 	public static Result users(){
 		  createNewEm();
-		  List<UserForm> blankArray = entityManager.createQuery("FROM Users").getResultList();
-		  for(UserForm user : blankArray){
+		  List<UserForm> users = entityManager.createQuery("FROM Users").getResultList();
+		  for(UserForm user : users){
 			  user.programName = entityManager.find(ProjectForm.class, Long.parseLong(user.getProjectId())).getProjectName();
 		  }
-		  return ok(views.html.users.render(blankArray));
+		  
+		  class UserFormComparator implements Comparator<UserForm>{
+				public int compare(UserForm userOne, UserForm userTwo){
+					return userOne.getVenID().compareTo(userTwo.getVenID());
+				}
+			}
+		  
+		  Collections.sort(users, new UserFormComparator());
+		  return ok(views.html.users.render(users));
 	}
 	
 	public static Result blankUser(){

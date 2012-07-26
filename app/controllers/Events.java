@@ -61,9 +61,8 @@ public class Events extends Controller {
 		  }
 	  }	  
 	  createNewEm();	  
-	  List<EiEvent> eiEvents = entityManager.createQuery("FROM org.enernoc.open.oadr2.model.EiEvent").getResultList();
-	  Comparator<EiEvent> comparator = new EiEventComparator();
-	  Collections.sort(eiEvents, comparator);
+	  List<EiEvent> eiEvents = entityManager.createQuery("FROM EiEvent").getResultList();
+	  Collections.sort(eiEvents, new EiEventComparator());
 	  List<EiEventForm> eiEventForms = new ArrayList<EiEventForm>();
 	  for(EiEvent event : eiEvents){
 		  EiEventForm tempForm = new EiEventForm(event);
@@ -72,7 +71,7 @@ public class Events extends Controller {
 		  eiEventForms.add(tempForm);
 	  }
 	  
-	  return ok(views.html.events.render(eiEventForms, new EiEventForm())); //not actually an error
+	  return ok(views.html.events.render(eiEventForms, new EiEventForm()));
   }
   
 public static Result blankEvent(){
@@ -96,8 +95,7 @@ public static Result blankEvent(){
 		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
 		  entityManager.persist(newEvent);
 		  entityManager.getTransaction().commit();
-		  flash("success", "Event as been created");
-		  
+		  flash("success", "Event as been created");		  
 		  ProjectEventRelation newRelation = new ProjectEventRelation(newEvent.getHjid(), 
 				  Integer.parseInt(newEventForm.marketContext));
 		  createNewEm();

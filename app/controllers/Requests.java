@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.DateFormat;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import models.ProjectEventRelation;
 import models.ProjectForm;
 import models.StatusObject;
 import models.UserForm;
@@ -62,18 +64,30 @@ public class Requests extends Controller{
 		return ok(views.html.requests.render());
 	}
 	
-	@Transactional(readOnly=true)
 	@SuppressWarnings("unchecked")
+	@Transactional(readOnly=true)
 	public static Result displayPage(){
 		List<StatusObject> listStatusObjects = entityManager.createQuery("FROM StatusObject").getResultList();
+		
+		class StatusObjectComparator implements Comparator<StatusObject>{
+			public int compare(StatusObject statusOne, StatusObject statusTwo){
+				return statusTwo.getTime().compareTo(statusOne.getTime());
+			}
+		}
+		
+		Collections.sort(listStatusObjects, new StatusObjectComparator());
+		
 		return ok(views.html.responseTable.render(listStatusObjects));
 	}
 	
-	@Transactional
-	@SuppressWarnings("unchecked")
-	public static Result ajaxDisplay(){
-		return redirect(routes.Requests.displayPage());
-	}
+	  @Transactional
+	  //Deletes an event based on the id
+	  public static Result deleteRequest(Long id){
+		  createNewEm();
+		  entityManager.remove(entityManager.find(StatusObject.class, id));
+		  entityManager.getTransaction().commit();
+	      return redirect(routes.Requests.requests());
+	  }
 	
 	@Transactional
 	//need to break apart, too big, each instanceof separate method
@@ -116,7 +130,7 @@ public class Requests extends Controller{
 				entityManager.getTransaction().commit();
 				
 				onRequestEvent(oRequestEvent);
-							
+				
 				OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
 				//Need to find out how to get EiEvent(s) and add them to this Distribute Event
 				//Possibly from the Market Context, but need XPath to access, or find through VEN and Users
@@ -199,37 +213,39 @@ public class Requests extends Controller{
 		createNewEm();
 		statusObject.setVenID(requestEvent.getEiRequestEvent().getVenID());
 		
-		List<UserForm> users = entityManager.createQuery("FROM Users").getResultList();
-		for(UserForm user : users){
-			if(user.getVenID().equals(requestEvent.getEiRequestEvent().getVenID())){
-				ProjectForm p = entityManager.find(ProjectForm.class, Long.parseLong(user.getProjectId()));
-				statusObject.setProgram(p.getProjectName());
-				break;
-			}
+		List<UserForm> users = entityManager.createQuery("SELECT u FROM Users u WHERE u.venID = :ven")
+				.setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
+				.getResultList();
+		
+		if(users.size() > 0){
+			ProjectForm p = entityManager.find(ProjectForm.class, Long.parseLong(users.get(0).getProjectId()));
+			statusObject.setProgram(p.getProjectName());
 		}
-		List<EiEvent> events = entityManager.createQuery("FROM EiEvent").getResultList();
-		for(EiEvent event: events){
-			if(event.getEventDescriptor().getEiMarketContext().getMarketContext().equals(statusObject.getProgram())){
-				statusObject.setEventID(event.getEventDescriptor().getEventID());
-				break;
-			}
+		List<EiEvent> events = entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
+				"marketContext WHERE marketContext.marketContext = :market and event.hjid=marketContext.hjid")
+				.setParameter("market", statusObject.getProgram())
+				.getResultList();
+		if(events.size() > 0){
+			statusObject.setEventID(events.get(0).getEventDescriptor().getEventID());
 		}
-		entityManager.persist(statusObject);
-		entityManager.getTransaction().commit();
+		
+		if(users.size() == 1 && events.size() == 1){
+			entityManager.persist(statusObject);
+			entityManager.getTransaction().commit();
+		}
 	}
 
 	@Transactional
 	public static void onCreatedEvent(OadrCreatedEvent createdEvent){
 		createNewEm();
-		List<StatusObject> statusList = entityManager.createQuery("FROM StatusObject").getResultList();
-		for(StatusObject status : statusList){
-			if(status.getVenID().equals(createdEvent.getEiCreatedEvent().getVenID())){
-				status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
-				status.setTime(new Date());
-				createNewEm();
-				entityManager.merge(status);
-				entityManager.getTransaction().commit();
-			}
+		List<StatusObject> statusList = entityManager.createQuery("SELECT status FROM StatusObject status WHERE status.venID = :ven")
+		.setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
+		.getResultList();
+		if(statusList.size() > 0){
+			statusList.get(0).setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
+			statusList.get(0).setTime(new Date());
+			entityManager.merge(statusList.get(0));
+			entityManager.getTransaction().commit();			
 		}
 	}	
 }

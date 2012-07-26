@@ -1,5 +1,7 @@
 @(statusList: List[StatusObject])
 
+@import helper._
+
 <h3>VEN Status</h3>
 <table>
 	<thead>
@@ -9,6 +11,7 @@
 			<th>Program</th>
 			<th>Status</th>
 			<th>Last Response</th>
+			<th></th>
 		</tr>
 	<tfoot></tfoot>
 	<tbody>
@@ -29,6 +32,11 @@
 					}
 				</td>
 				<td>@status.displayTime()</td>
+				<td>
+					@form(routes.Requests.deleteRequest(status.getId())){
+						<input type="submit" value="Delete" class="btn danger">
+					}
+				</td>	
 			</tr>
 		}
 		

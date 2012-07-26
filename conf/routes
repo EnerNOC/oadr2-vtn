@@ -33,9 +33,11 @@ POST    /project/:id/delete       controllers.Markets.deleteProject(id:Long)
 GET /requests			controllers.Requests.requests()
 POST /requests			controllers.Requests.marshalRequest()
 
-POST /requests/test		controllers.Requests.ajaxDisplay()
+# Display Page
+POST /requests/display		controllers.Requests.displayPage()
 
-GET /requests/response		controllers.Requests.displayPage()
+# Delete Request
+POST    /requests/:id/delete       controllers.Requests.deleteRequest(id:Long)
 
 # User List
 GET /users					controllers.Users.users()
