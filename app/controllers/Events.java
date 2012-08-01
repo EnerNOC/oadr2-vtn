@@ -16,8 +16,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import models.EiEventForm;
-import models.ProjectEventRelation;
-import models.ProjectForm;
+import models.ProgramForm;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
@@ -29,6 +28,7 @@ import org.enernoc.open.oadr2.model.OadrResponse;
 import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -53,7 +53,7 @@ public class Events extends Controller {
   @SuppressWarnings("unchecked")
   @Transactional
   public static Result events(){
-	  
+
 	  class EiEventComparator implements Comparator<EiEvent>{
 		  public int compare(EiEvent eventOne, EiEvent eventTwo){
 			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem().compareTo(
@@ -63,21 +63,14 @@ public class Events extends Controller {
 	  createNewEm();	  
 	  List<EiEvent> eiEvents = entityManager.createQuery("FROM EiEvent").getResultList();
 	  Collections.sort(eiEvents, new EiEventComparator());
-	  List<EiEventForm> eiEventForms = new ArrayList<EiEventForm>();
-	  for(EiEvent event : eiEvents){
-		  EiEventForm tempForm = new EiEventForm(event);
-		  ProjectEventRelation eventRelation = getRelationFromEvent(event.getHjid());
-		  tempForm.marketContext = entityManager.find(ProjectForm.class, (long)eventRelation.getProjectId()).getProjectName();
-		  eiEventForms.add(tempForm);
-	  }
 	  
-	  return ok(views.html.events.render(eiEventForms, new EiEventForm()));
+	  return ok(views.html.events.render(eiEvents, new EiEventForm()));
   }
   
 public static Result blankEvent(){
 	  EiEventForm newForm = new EiEventForm();
-	  return ok(views.html.createEvent.render(form(EiEventForm.class).fill(newForm), newForm, makeProjectMap()));
-  }//
+	  return ok(views.html.createEvent.render(form(EiEventForm.class).fill(newForm), newForm, makeProgramMap()));
+  }
   
   @Transactional
   //Method to create a new event once on the newEvent page
@@ -86,22 +79,23 @@ public static Result blankEvent(){
 	  Form<EiEventForm> filledForm = form(EiEventForm.class).bindFromRequest();
       if(filledForm.hasErrors()) {
     	  addFlashError(filledForm.errors());
-          return badRequest(views.html.createEvent.render(filledForm, new EiEventForm(), makeProjectMap()));
+          return badRequest(views.html.createEvent.render(filledForm, new EiEventForm(), makeProgramMap()));
       }
 	  else{		  
 		  EiEventForm newEventForm = filledForm.get();
 		  EiEvent newEvent = newEventForm.toEiEvent();
-		  String contextName = entityManager.find(ProjectForm.class, Long.parseLong(newEventForm.marketContext)).getProjectName();
+		  String contextName = entityManager.find(ProgramForm.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
 		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
 		  entityManager.persist(newEvent);
 		  entityManager.getTransaction().commit();
-		  flash("success", "Event as been created");		  
-		  ProjectEventRelation newRelation = new ProjectEventRelation(newEvent.getHjid(), 
+		  flash("success", "Event as been created");		
+		  /*
+		  ProgramEventRelation newRelation = new ProgramEventRelation(newEvent.getHjid(), 
 				  Integer.parseInt(newEventForm.marketContext));
 		  createNewEm();
 		  entityManager.persist(newRelation);
 		  entityManager.getTransaction().commit();
-		  
+		  */
 		  return redirect(routes.Events.newEvent());		  
 	  }
   }
@@ -111,7 +105,7 @@ public static Result blankEvent(){
   public static Result deleteEvent(Long id){
 	  createNewEm();
 	  entityManager.remove(entityManager.find(EiEvent.class, id));
-	  entityManager.remove(entityManager.find(ProjectEventRelation.class, getRelationFromEvent(id).getId()));
+	  //entityManager.remove(entityManager.find(ProgramEventRelation.class, getRelationFromEvent(id).getId()));
 	  entityManager.getTransaction().commit();
       flash("success", "Event has been deleted");
       return redirect(routes.Events.events());
@@ -122,7 +116,7 @@ public static Result blankEvent(){
 	  createNewEm();
 	  Form<EiEventForm> eventForm = form(EiEventForm.class).bindFromRequest();
       if(eventForm.hasErrors()) {
-          return badRequest(views.html.editEvent.render(id, eventForm, new EiEventForm(), makeProjectMap()));
+          return badRequest(views.html.editEvent.render(id, eventForm, new EiEventForm(), makeProgramMap()));
       }
       EiEventForm eiEventForm= eventForm.get();
       eiEventForm.copyEvent(entityManager.find(EiEvent.class, id));
@@ -130,13 +124,16 @@ public static Result blankEvent(){
       event = eiEventForm.getEiEvent();
       entityManager.getTransaction().commit();
       flash("success", "Event has been updated");
-      ProjectEventRelation theId = getRelationFromEvent(id);
-      ProjectEventRelation relation = entityManager.find(ProjectEventRelation.class, theId.getId());
-      relation.setProjectId(Integer.parseInt(eiEventForm.marketContext));
+      /*
+      ProgramEventRelation theId = getRelationFromEvent(id);
+      ProgramEventRelation relation = entityManager.find(ProgramEventRelation.class, theId.getId());
+      
+      relation.setProgramId(Integer.parseInt(eiEventForm.marketContext));
       
 	  createNewEm();
 	  entityManager.merge(relation);
 	  entityManager.getTransaction().commit();
+	  */
 	  return redirect(routes.Events.events());
   }
   
@@ -144,12 +141,12 @@ public static Result blankEvent(){
   public static Result editEvent(Long id){
 	  createNewEm();
 	  EiEventForm form = new EiEventForm(entityManager.find(EiEvent.class, id));
-	  form.marketContext = getRelationFromEvent(id).getProjectId() + "";
-	  return ok(views.html.editEvent.render(id, form(EiEventForm.class).fill(form), form, makeProjectMap()));
+	  //form.marketContext = getRelationFromEvent(id).getProgramId() + "";
+	  return ok(views.html.editEvent.render(id, form(EiEventForm.class).fill(form), form, makeProgramMap()));
   }
   
   //since entity managers are cheap, each one is to be made new for each transaction
-  //so as to avoid PessimisticLockException
+  //is equivalent of the JPA.em(
   public static void createNewEm(){
 	  entityManager = entityManagerFactory.createEntityManager();
 	  if(!entityManager.getTransaction().isActive()){
@@ -169,18 +166,20 @@ public static Result blankEvent(){
   }
  
   @SuppressWarnings("unchecked")
-public static Map<String, String> makeProjectMap(){
-	  List<ProjectForm> projectList = entityManager.createQuery("FROM Project").getResultList();
-	  Map<String, String> projectMap = new HashMap<String, String>();
-	  for(ProjectForm project : projectList){
-		  projectMap.put(project.getId() + "", project.getProjectName());
+public static Map<String, String> makeProgramMap(){
+	  List<ProgramForm> programList = entityManager.createQuery("FROM Program").getResultList();
+	  Map<String, String> programMap = new HashMap<String, String>();
+	  for(ProgramForm program : programList){
+		  programMap.put(program.getId() + "", program.getProgramName());
 	  }
-	  return projectMap;
+	  return programMap;
   }
   
-  public static ProjectEventRelation getRelationFromEvent(long eventId){
-	  return (ProjectEventRelation) entityManager.createQuery("FROM ProjectEvent WHERE eventId=" 
+  /*
+  public static ProgramEventRelation getRelationFromEvent(long eventId){
+	  return (ProgramEventRelation) entityManager.createQuery("FROM ProgramEvent WHERE eventId=" 
 			  + eventId).getResultList().get(0);
   }
+  */
   
 }

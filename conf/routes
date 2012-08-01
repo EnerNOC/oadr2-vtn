@@ -5,6 +5,9 @@
 # Home page
 GET	/						controllers.Events.index()
 
+# Test
+#GET /test					controllers.Requests.index()
+
 # Event List
 GET /events					controllers.Events.events()
 
@@ -19,35 +22,35 @@ POST /events/:id		controllers.Events.updateEvent(id:Long)
 # Delete Event
 POST    /events/:id/delete       controllers.Events.deleteEvent(id:Long)
 
-# Project List
-GET /programs					controllers.Markets.projects()
+# Program List
+GET /programs					controllers.Programs.programs()
 
 # New Event
-GET	/programs/new					controllers.Markets.blankProject()
-POST	/programs					controllers.Markets.newProject()
+GET	/programs/new					controllers.Programs.blankProgram()
+POST	/programs					controllers.Programs.newProgram()
 
 # Delete Event
-POST    /project/:id/delete       controllers.Markets.deleteProject(id:Long)
+POST    /program/:id/delete       controllers.Programs.deleteProgram(id:Long)
 
 # Handle Request
-GET /requests			controllers.Requests.requests()
+GET /requests/:program			controllers.Requests.requests(program:String)
 POST /requests			controllers.Requests.marshalRequest()
 
 # Display Page
-POST /requests/display		controllers.Requests.displayPage()
+POST /requests/display		controllers.Requests.renderAjaxTable(program:String)
 
 # Delete Request
-POST    /requests/:id/delete       controllers.Requests.deleteRequest(id:Long)
+POST    /requests/:id/delete       controllers.Requests.deleteRequest(program:String, id:Long)
 
-# User List
-GET /users					controllers.Users.users()
+# Customer List
+GET /customers					controllers.Customers.customers()
 
-# New User
-GET /users/new				controllers.Users.blankUser()
-POST /users					controllers.Users.newUser()
+# New Customer
+GET /customers/new				controllers.Customers.blankCustomer()
+POST /customers					controllers.Customers.newCustomer()
 
-# Delete User
-POST	/users/:id/delete	controllers.Users.deleteUser(id:Long)
+# Delete Customer
+POST	/customers/:id/delete	controllers.Customers.deleteCustomer(id:Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

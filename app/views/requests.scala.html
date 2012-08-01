@@ -1,31 +1,48 @@
-@()
+@(program: String, programs: List[EiEvent])
 
 @import helper._
 
 @import helper.twitterBootstrap._
 @main(Html("Requests"), "Requests") {
+
+	<h3>Select Event:</h3>
+	<select name="program"">
+		@for(p <- programs){
+			@if(program == p.getEventDescriptor().getEventID()){
+				<option selected="selected" value="@routes.Requests.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>
+			}else{
+				<option value="@routes.Requests.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>		
+			}
+		}
+	</select>
+	<p>
+	</p>
+	<h3>VEN Status</h3>	
 	<div id=xmlOutput></div>	
 
-	<script>
-		/*Brian don't yell please for in-line JS, will fix!*/
+	<script>	
+		$("select[name='program']").change(function(){
+			location.href= $(this).val();
+		});
+	
 		$(document).ready(function(){	
-			var test = function(){
-				$.post('@routes.Requests.displayPage()',
+			var loadRequests = function(){
+				$.post('@routes.Requests.renderAjaxTable(program)',
 						"",
 						function(data){
 							$('#xmlOutput').empty();
+							$('<div class="refreshing"><img src=@routes.Assets.at("/images/loader.gif")></div>').appendTo('#xmlOutput');
 							$('#xmlOutput').append(data);
+							$(".refreshing").remove();
 				});
 			};
-				test();
+				loadRequests();
 				$('#requestbutton').click(function(){
 					$(this).text("Loading request...");
-					test();
+					loadRequests();
 					$(this).text("Refresh");
 				});
-				setInterval(test, 60000);
-		});
-
-		
+				setInterval(loadRequests, 30000);
+		});		
 	</script>
 }

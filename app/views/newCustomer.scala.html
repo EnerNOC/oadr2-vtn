@@ -1,4 +1,4 @@
-@(userForm: Form[UserForm], programs: Map[String, String])
+@(userForm: Form[CustomerForm], programs: Map[String, String])
 
 @import helper._
 
@@ -10,21 +10,30 @@
 
 @main(Html("Create a Customer"), "") {
 	
-	@form(routes.Users.newUser()) {
+	@if(flash.size() > 0){
+       <div class="alert-message error">
+       	@for((key, value) <- flash){
+           	<strong>Error : </strong> @value<br />
+           }
+       </div> 
+    }
+	
+	@form(routes.Customers.newCustomer()) {
 	
         <fieldset>
 		    <!-- will eventually generate this ID -->
-		    <h3>Customer Information</h3>    
+		    <h3>Customer Information</h3>   
+		    	@inputText(userForm("customerName"), '_label -> "Customer Name")
 				@inputText(userForm("venID"), '_label -> "VEN ID")
 				@select(
-                	userForm("ProjectId"), 
+                	userForm("ProgramId"), 
                 	options(programs), 
 	                '_label -> "Program", '_default -> "-- Choose a program --",
 	                '_showConstraints -> false
 	            )
 	            <div class="actions">
 	            	<input type="submit" value="Create this customer" class="btn primary"> or 
-	            	<a href="@routes.Users.users()" class="btn">Cancel</a>
+	            	<a href="@routes.Customers.customers()" class="btn">Cancel</a>
         		</div>
 		</fieldset>
 	}

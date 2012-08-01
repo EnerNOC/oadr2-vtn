@@ -214,7 +214,7 @@ public class EiEventForm{
 		return year + "-" + month + "-" + day + "T" + hourString + ":" + minute + ":00";
 	}
 	
-	// returns a date time object from two string inputs
+	// returns a date time obgram from two string inputs
 	// date = "MM-dd-yyyy" time = "h:mm" || time = "hh:mm"
 	// time must not be 0 start for hours
 	public DateTime createJodaTime(String date, String time){

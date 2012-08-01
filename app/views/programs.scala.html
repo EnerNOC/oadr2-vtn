@@ -1,4 +1,4 @@
-@(projects: List[ProjectForm])
+@(programs: List[ProgramForm])
 
 @import helper._
 
@@ -28,16 +28,25 @@
             <tfoot>
             </tfoot>
             <tbody>
-            @for(project <- projects){ 
+            @for(program <- programs){ 
             	<tr>
-	            	<td>@project.getProjectName()</td>
-	            	<td>@project.getProjectURI()</td>	            	
-					<td>@form(routes.Markets.deleteProject(project.getId())){
-							<input type="submit" value="Delete" class="btn danger">
+	            	<td>@program.getProgramName()</td>
+	            	<td>@program.getProgramURI()</td>	            	
+					<td>@form(routes.Programs.deleteProgram(program.getId())){
+							<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 						}
 					</td>
             	</tr>
             }     	
             </tbody>
         </table>
+        <script>
+        	function confirmSubmit(){
+        		var agree=confirm("Are you sure you wish to delete this event?");
+        		if(agree)
+        			return true;
+        		else
+        			return false;
+        	}
+        </script>
 }

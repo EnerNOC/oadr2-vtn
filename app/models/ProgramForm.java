@@ -5,43 +5,43 @@ import javax.xml.bind.annotation.XmlAttribute;
 
 import play.data.validation.Constraints.Required;
 
-@Entity(name="Project")
+@Entity(name="Program")
 @Table(name="PROJECT")
 //@Inheritance(strategy = InheritanceType.JOINED)
-public class ProjectForm{
+public class ProgramForm{
 	
-	@Required
-	private String projectName;
-	@Required
-	private String projectURI;
+	@Required(message = "Must entre a valid Program Name")
+	private String programName;
+	@Required(message = "Must enter a valid Program URI")
+	private String programURI;
 
 	@Id private long id;
 	
-	public ProjectForm(){
+	public ProgramForm(){
 		
 	}
 	
-	public ProjectForm(int projectId){
-		this.setId(projectId);
+	public ProgramForm(int programId){
+		this.setId(programId);
 		// also need to add setter for the other two fields from find statement
 	}
 
 	@Column(name="PROJECTURI")
-	public String getProjectURI() {
-		return projectURI;
+	public String getProgramURI() {
+		return programURI;
 	}
 
-	public void setProjectURI(String projectURI) {
-		this.projectURI = projectURI;
+	public void setProgramURI(String programURI) {
+		this.programURI = programURI;
 	}
 
 	@Column(name="PROJECTNAME")
-	public String getProjectName() {
-		return projectName;
+	public String getProgramName() {
+		return programName;
 	}
 
-	public void setProjectName(String projectName) {
-		this.projectName = projectName;
+	public void setProgramName(String programName) {
+		this.programName = programName;
 	}
 
     @Id

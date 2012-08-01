@@ -13,10 +13,9 @@ import javax.persistence.Persistence;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 
-import models.ProjectEventRelation;
-import models.ProjectForm;
+import models.ProgramForm;
 import models.StatusObject;
-import models.UserForm;
+import models.CustomerForm;
 import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
@@ -26,77 +25,73 @@ import play.mvc.Result;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
 
-/*
- * Delete is not working yet, sends some strange error about no data being sent and stuff
- */
-public class Users extends Controller {
+public class Customers extends Controller {
 	static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
 	static EntityManager entityManager = entityManagerFactory.createEntityManager();
 	
 
 	public static Result index() {
-		  return redirect(routes.Users.users());
+		  return redirect(routes.Customers.customers());
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Result users(){
+	public static Result customers(){
 		  createNewEm();
-		  List<UserForm> users = entityManager.createQuery("FROM Users").getResultList();
-		  for(UserForm user : users){
-			  user.programName = entityManager.find(ProjectForm.class, Long.parseLong(user.getProjectId())).getProjectName();
-		  }
-		  
-		  class UserFormComparator implements Comparator<UserForm>{
-				public int compare(UserForm userOne, UserForm userTwo){
+		  List<CustomerForm> customers = entityManager.createQuery("FROM Customers").getResultList();
+		  		  
+		  class CustomerFormComparator implements Comparator<CustomerForm>{
+				public int compare(CustomerForm userOne, CustomerForm userTwo){
 					return userOne.getVenID().compareTo(userTwo.getVenID());
 				}
 			}
 		  
-		  Collections.sort(users, new UserFormComparator());
-		  return ok(views.html.users.render(users));
+		  Collections.sort(customers, new CustomerFormComparator());
+		  return ok(views.html.customers.render(customers));
 	}
 	
-	public static Result blankUser(){
-		return ok(views.html.newUser.render(form(UserForm.class), makeProjectMap()));
+	public static Result blankCustomer(){
+		return ok(views.html.newCustomer.render(form(CustomerForm.class), makeProgramMap()));
 	}
 	
 	@Transactional
-	public static Result newUser(){
-		  Form<UserForm> filledForm = form(UserForm.class).bindFromRequest();
+	public static Result newCustomer(){
+		  Form<CustomerForm> filledForm = form(CustomerForm.class).bindFromRequest();
 		  if(filledForm.hasErrors()){
 	    	  addFlashError(filledForm.errors());
-			  return badRequest(views.html.newUser.render(filledForm, makeProjectMap()));
+			  return badRequest(views.html.newCustomer.render(filledForm, makeProgramMap()));
 		  }
 		  else{
 			  createNewEm();
-			  UserForm newUser = filledForm.get();entityManager.persist(newUser);
+			  CustomerForm newCustomer = filledForm.get();
+			  newCustomer.setProgramId(entityManager.find(ProgramForm.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
+			  entityManager.persist(newCustomer);
 			  entityManager.getTransaction().commit();
 			  flash("success", "Customer as been created");
 		  }
-		  return redirect(routes.Users.users());
+		  return redirect(routes.Customers.customers());
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Transactional(readOnly=true)
-	public static Map<String, String> makeProjectMap(){
+	public static Map<String, String> makeProgramMap(){
 		createNewEm();
-		List<ProjectForm> projectList = entityManager.createQuery("FROM Project").getResultList();
-		Map<String, String> projectMap = new HashMap<String, String>();
-		for(ProjectForm project : projectList){
-			projectMap.put(project.getId() + "", project.getProjectName());
+		List<ProgramForm> programList = entityManager.createQuery("FROM Program").getResultList();
+		Map<String, String> programMap = new HashMap<String, String>();
+		for(ProgramForm program : programList){
+			programMap.put(program.getId() + "", program.getProgramName());
 		}
 		
-		return projectMap;
+		return programMap;
 	}
 	
 	  @Transactional
 	  //Deletes an event based on the id
-	  public static Result deleteUser(Long id){
+	  public static Result deleteCustomer(Long id){
 		  createNewEm();
-		  entityManager.remove(entityManager.find(UserForm.class, id));
+		  entityManager.remove(entityManager.find(CustomerForm.class, id));
 		  entityManager.getTransaction().commit();
 	      flash("success", "Customer has been deleted");
-	      return redirect(routes.Users.users());
+	      return redirect(routes.Customers.customers());
 	  }
 	
 	public static void createNewEm(){

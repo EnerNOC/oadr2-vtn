@@ -1,8 +1,7 @@
-@(statusList: List[StatusObject])
+@(statusList: List[StatusObject], program: String)
 
 @import helper._
 
-<h3>VEN Status</h3>
 <table>
 	<thead>
 		<tr>
@@ -33,8 +32,8 @@
 				</td>
 				<td>@status.displayTime()</td>
 				<td>
-					@form(routes.Requests.deleteRequest(status.getId())){
-						<input type="submit" value="Delete" class="btn danger">
+					@form(routes.Requests.deleteRequest(program, status.getId())){
+						<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 					}
 				</td>	
 			</tr>
@@ -42,3 +41,13 @@
 		
 	</tbody>
 </table>
+
+<script>
+   	function confirmSubmit(){
+   		var agree=confirm("Are you sure you wish to delete this event?");
+   		if(agree)
+   			return true;
+   		else
+   			return false;
+   	}
+</script>

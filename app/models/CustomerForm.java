@@ -2,26 +2,28 @@ package models;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
 
-@Entity(name="Users")
-@Table(name="USERS")
+@Entity(name="Customers")
+@Table(name="CUSTOMERS")
 //@Inheritance(strategy = InheritanceType.JOINED)
-public class UserForm{
+public class CustomerForm{
 	
 	public String programName;
-	
-	@Required
+		
+	@Required(message = "Must enter a valid VEN ID")
 	@Column(name = "VENID")
 	private String venID;
 	
-	@Required
-	@Column(name = "PROJECTID")
-	private String projectId;
+	@Required(message = "Must select a Program")
+	@Column(name = "PROGRAMID")
+	private String programId;
+	
+	@Column(name = "CUSTOMERNAME")
+	private String customerName;
 	
 	@ElementCollection
 	@Column(name = "VENS")
@@ -33,12 +35,12 @@ public class UserForm{
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 		
-	public UserForm(){
+	public CustomerForm(){
 		
 	}
 	
-	public UserForm(int projectId){
-		this.setId(projectId);
+	public CustomerForm(int programId){
+		this.setId(programId);
 		// also need to add setter for the other two fields from find statement
 	}
 
@@ -50,13 +52,13 @@ public class UserForm{
 		this.venID = userName;
 	}
 
-	public String getProjectId() {
-		return projectId;
+	public String getProgramId() {
+		return programId;
 	}
 
 	@Column(name = "PROJECTID")
-	public void setProjectId(String projectId) {
-		this.projectId = projectId;
+	public void setProgramId(String programId) {
+		this.programId = programId;
 	}
 
 	public long getId() {
@@ -74,5 +76,13 @@ public class UserForm{
 	public void setVens(List <String> vens) {
 		this.vens = vens;
 	}
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
 
 }

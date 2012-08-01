@@ -1,22 +1,22 @@
-@(projectForm: Form[ProjectForm])
+@(programForm: Form[ProgramForm])
 
 @import helper._
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.render) } 
 @main(Html("Create a Program"), "") {
 	
-	@form(routes.Markets.newProject()) {
+	@form(routes.Programs.newProgram()) {
 	
         <fieldset>
 		    <!-- will eventually generate this ID -->
 		    <h3>Market Context</h3>    
-				@inputText(projectForm("projectName"), '_label -> "Program Name")
-				@inputText(projectForm("projectURI"), '_label -> "URI")
+				@inputText(programForm("programName"), '_label -> "Program Name")
+				@inputText(programForm("programURI"), '_label -> "URI")
 		</fieldset>
 		
         <div class="actions">
             <input type="submit" value="Create this program" class="btn primary"> or 
-            <a href="@routes.Markets.projects()" class="btn">Cancel</a>     
+            <a href="@routes.Programs.programs()" class="btn">Cancel</a>     
         </div>
 	}
 }
