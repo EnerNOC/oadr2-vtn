@@ -59,9 +59,8 @@ public class Events extends Controller {
 			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem().compareTo(
 					  eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem());
 		  }
-	  }	  
-	  createNewEm();	  
-	  List<EiEvent> eiEvents = entityManager.createQuery("FROM EiEvent").getResultList();
+	  } 
+	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
 	  Collections.sort(eiEvents, new EiEventComparator());
 	  
 	  return ok(views.html.events.render(eiEvents, new EiEventForm()));
@@ -75,7 +74,6 @@ public static Result blankEvent(){
   @Transactional
   //Method to create a new event once on the newEvent page
   public static Result newEvent(){
-	  createNewEm();
 	  Form<EiEventForm> filledForm = form(EiEventForm.class).bindFromRequest();
       if(filledForm.hasErrors()) {
     	  addFlashError(filledForm.errors());
@@ -84,17 +82,16 @@ public static Result blankEvent(){
 	  else{		  
 		  EiEventForm newEventForm = filledForm.get();
 		  EiEvent newEvent = newEventForm.toEiEvent();
-		  String contextName = entityManager.find(ProgramForm.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
+		  String contextName = JPA.em().find(ProgramForm.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
 		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
-		  entityManager.persist(newEvent);
-		  entityManager.getTransaction().commit();
+		  JPA.em().persist(newEvent);
 		  flash("success", "Event as been created");		
 		  /*
 		  ProgramEventRelation newRelation = new ProgramEventRelation(newEvent.getHjid(), 
 				  Integer.parseInt(newEventForm.marketContext));
 		  createNewEm();
-		  entityManager.persist(newRelation);
-		  entityManager.getTransaction().commit();
+		  JPA.em().persist(newRelation);
+		  JPA.em().getTransaction().commit();
 		  */
 		  return redirect(routes.Events.newEvent());		  
 	  }
@@ -103,57 +100,34 @@ public static Result blankEvent(){
   @Transactional
   //Deletes an event based on the id
   public static Result deleteEvent(Long id){
-	  createNewEm();
-	  entityManager.remove(entityManager.find(EiEvent.class, id));
-	  //entityManager.remove(entityManager.find(ProgramEventRelation.class, getRelationFromEvent(id).getId()));
-	  entityManager.getTransaction().commit();
+	  JPA.em().remove(JPA.em().find(EiEvent.class, id));
+	  //JPA.em().remove(JPA.em().find(ProgramEventRelation.class, getRelationFromEvent(id).getId()));
       flash("success", "Event has been deleted");
       return redirect(routes.Events.events());
   }
   
   @Transactional
   public static Result updateEvent(Long id){
-	  createNewEm();
 	  Form<EiEventForm> eventForm = form(EiEventForm.class).bindFromRequest();
       if(eventForm.hasErrors()) {
           return badRequest(views.html.editEvent.render(id, eventForm, new EiEventForm(), makeProgramMap()));
       }
       EiEventForm eiEventForm= eventForm.get();
-      eiEventForm.copyEvent(entityManager.find(EiEvent.class, id));
-      EiEvent event = entityManager.find(EiEvent.class, id); //is actually used, eclipse is a liar
+      eiEventForm.copyEvent(JPA.em().find(EiEvent.class, id));
+      EiEvent event = JPA.em().find(EiEvent.class, id); //is actually used, eclipse is a liar
       event = eiEventForm.getEiEvent();
-      entityManager.getTransaction().commit();
+      JPA.em().merge(event);
       flash("success", "Event has been updated");
-      /*
-      ProgramEventRelation theId = getRelationFromEvent(id);
-      ProgramEventRelation relation = entityManager.find(ProgramEventRelation.class, theId.getId());
-      
-      relation.setProgramId(Integer.parseInt(eiEventForm.marketContext));
-      
-	  createNewEm();
-	  entityManager.merge(relation);
-	  entityManager.getTransaction().commit();
-	  */
 	  return redirect(routes.Events.events());
   }
   
-@Transactional
+  @Transactional
   public static Result editEvent(Long id){
-	  createNewEm();
-	  EiEventForm form = new EiEventForm(entityManager.find(EiEvent.class, id));
+	  EiEventForm form = new EiEventForm(JPA.em().find(EiEvent.class, id));
 	  //form.marketContext = getRelationFromEvent(id).getProgramId() + "";
 	  return ok(views.html.editEvent.render(id, form(EiEventForm.class).fill(form), form, makeProgramMap()));
   }
-  
-  //since entity managers are cheap, each one is to be made new for each transaction
-  //is equivalent of the JPA.em(
-  public static void createNewEm(){
-	  entityManager = entityManagerFactory.createEntityManager();
-	  if(!entityManager.getTransaction().isActive()){
-		  entityManager.getTransaction().begin();
-	  }
-  }
-  
+
   //Takes the error Map with a string as a key and adds
   //the key and value to the flash() scope to be accessed
   public static void addFlashError(Map<String, List<ValidationError>> errors){
@@ -166,20 +140,15 @@ public static Result blankEvent(){
   }
  
   @SuppressWarnings("unchecked")
-public static Map<String, String> makeProgramMap(){
-	  List<ProgramForm> programList = entityManager.createQuery("FROM Program").getResultList();
-	  Map<String, String> programMap = new HashMap<String, String>();
+  @Transactional
+  public static Map<String, String> makeProgramMap(){
+      //JPA.em() doesn't work...
+      List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
+      Map<String, String> programMap = new HashMap<String, String>();
 	  for(ProgramForm program : programList){
 		  programMap.put(program.getId() + "", program.getProgramName());
 	  }
 	  return programMap;
   }
-  
-  /*
-  public static ProgramEventRelation getRelationFromEvent(long eventId){
-	  return (ProgramEventRelation) entityManager.createQuery("FROM ProgramEvent WHERE eventId=" 
-			  + eventId).getResultList().get(0);
-  }
-  */
   
 }

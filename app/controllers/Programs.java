@@ -10,7 +10,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
 import models.ProgramForm;
-import models.StatusObject;
+import models.VENStatus;
 import models.CustomerForm;
 
 import org.enernoc.open.oadr2.model.EiEvent.*;
@@ -36,8 +36,7 @@ public class Programs extends Controller {
 @SuppressWarnings("unchecked")
 @Transactional
 public static Result programs(){
-	  createNewEm();
-	  List<ProgramForm> programs = entityManager.createQuery("FROM Program").getResultList();
+	  List<ProgramForm> programs = JPA.em().createQuery("FROM Program").getResultList();
 	  
 	  class ProgramFormComparator implements Comparator<ProgramForm>{
 			public int compare(ProgramForm programOne, ProgramForm programTwo){
@@ -55,7 +54,6 @@ public static Result programs(){
   
   @Transactional
   public static Result newProgram(){
-	  createNewEm();
 	  Form<ProgramForm> filledForm = form(ProgramForm.class).bindFromRequest();
 	  if(filledForm.hasErrors()){
 		  //do some error handling
@@ -64,28 +62,18 @@ public static Result programs(){
 	  else{
 		  ProgramForm newProgram = filledForm.get();
 		  //Logger.info(newProgram.getProgramName() + " " + newProgram.getProgramURI() + " " + newProgram.getId());
-		  entityManager.persist(newProgram);
-		  entityManager.getTransaction().commit();
+		  JPA.em().persist(newProgram);
 		  flash("success", "Program as been created");
 	  }
 	  return redirect(routes.Programs.programs());
   }
   
   @SuppressWarnings("unchecked")
-public static Result deleteProgram(Long id){
-	  createNewEm();
-	  ProgramForm program = entityManager.find(ProgramForm.class, id);
-	  //Logger.info("Program: " + program.getProgramURI());
-	  
-	  //List<ProgramEventRelation> relations = entityManager.createQuery("FROM ProgramEvent").getResultList();
-	  List<CustomerForm> customers = entityManager.createQuery("FROM Customers").getResultList();
-	  /*for(ProgramEventRelation relation : relations){
-		  if(relation.getProgramId() == id){
-			  flash("failure", "Cannot delete program. Please delete events using the program first");
-			  return redirect(routes.Programs.programs());
-		  }
-	  } 
-	  */
+  
+  @Transactional
+  public static Result deleteProgram(Long id){
+	  ProgramForm program = JPA.em().find(ProgramForm.class, id);
+	  List<CustomerForm> customers = JPA.em().createQuery("FROM Customers").getResultList();
 	  
 	  for(CustomerForm customer : customers){
 		  //Logger.info("Customer: " + customer.getProgramId());
@@ -95,15 +83,14 @@ public static Result deleteProgram(Long id){
 		  }
 	  }
 	  flash("success", "Program has been deleted");
-	  entityManager.remove(program);
-	  entityManager.getTransaction().commit();
+	  JPA.em().remove(program);
 	  return redirect(routes.Programs.programs());
   }
  
   public static void createNewEm(){
 	  entityManager = entityManagerFactory.createEntityManager();
-	  if(!entityManager.getTransaction().isActive()){
-		  entityManager.getTransaction().begin();
+	  if(!JPA.em().getTransaction().isActive()){
+		  JPA.em().getTransaction().begin();
 	  }
   }
   

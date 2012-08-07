@@ -13,7 +13,7 @@ import javax.persistence.Table;
 
 @Entity(name = "StatusObject")
 @Table(name = "STATUSOBJECT")
-public class StatusObject {
+public class VENStatus {
 	
 	@Id 
 	@Column(name = "ID")

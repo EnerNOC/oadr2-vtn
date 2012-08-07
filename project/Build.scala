@@ -10,8 +10,7 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
     	//not certain of the .org is necessary
    		"org.hibernate" % "hibernate-entitymanager" % "4.1.4.Final",
-   		"com.typesafe" % "play-plugins-inject" % "2.0.2",
-   		"com.typesafe" % "play-plugins-guice" % "2.0.2"
+   		"com.typesafe" % "play-plugins-inject" % "2.0.2"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = JAVA).settings(

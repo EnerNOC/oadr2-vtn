@@ -14,30 +14,28 @@ import javax.persistence.Persistence;
 import org.enernoc.open.oadr2.model.EiEvent;
 
 import models.ProgramForm;
-import models.StatusObject;
+import models.VENStatus;
 import models.CustomerForm;
 import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
 
-public class Customers extends Controller {
-	static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
-	static EntityManager entityManager = entityManagerFactory.createEntityManager();
-	
+public class Customers extends Controller {	
 
 	public static Result index() {
 		  return redirect(routes.Customers.customers());
 	}
 
 	@SuppressWarnings("unchecked")
+	@Transactional
 	public static Result customers(){
-		  createNewEm();
-		  List<CustomerForm> customers = entityManager.createQuery("FROM Customers").getResultList();
+		  List<CustomerForm> customers = JPA.em().createQuery("FROM Customers").getResultList();
 		  		  
 		  class CustomerFormComparator implements Comparator<CustomerForm>{
 				public int compare(CustomerForm userOne, CustomerForm userTwo){
@@ -61,21 +59,20 @@ public class Customers extends Controller {
 			  return badRequest(views.html.newCustomer.render(filledForm, makeProgramMap()));
 		  }
 		  else{
-			  createNewEm();
 			  CustomerForm newCustomer = filledForm.get();
-			  newCustomer.setProgramId(entityManager.find(ProgramForm.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
-			  entityManager.persist(newCustomer);
-			  entityManager.getTransaction().commit();
+			  newCustomer.setProgramId(JPA.em().find(ProgramForm.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
+			  JPA.em().persist(newCustomer);
 			  flash("success", "Customer as been created");
 		  }
 		  return redirect(routes.Customers.customers());
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Transactional(readOnly=true)
+	//@Transactional
+	//gives stupid "Try marking with @Transactional" error, yeah, kinda was, kinda didnt work anyways
 	public static Map<String, String> makeProgramMap(){
-		createNewEm();
-		List<ProgramForm> programList = entityManager.createQuery("FROM Program").getResultList();
+	    //What the fk this works but JPA.em() doesn't? ya okay sweet bro
+	    List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
+		//List<ProgramForm> programList = JPA.em().createQuery("FROM Program").getResultList();
 		Map<String, String> programMap = new HashMap<String, String>();
 		for(ProgramForm program : programList){
 			programMap.put(program.getId() + "", program.getProgramName());
@@ -85,21 +82,11 @@ public class Customers extends Controller {
 	}
 	
 	  @Transactional
-	  //Deletes an event based on the id
 	  public static Result deleteCustomer(Long id){
-		  createNewEm();
-		  entityManager.remove(entityManager.find(CustomerForm.class, id));
-		  entityManager.getTransaction().commit();
+		  JPA.em().remove(JPA.em().find(CustomerForm.class, id));
 	      flash("success", "Customer has been deleted");
 	      return redirect(routes.Customers.customers());
 	  }
-	
-	public static void createNewEm(){
-		entityManager = entityManagerFactory.createEntityManager();
-		if(!entityManager.getTransaction().isActive()){
-			entityManager.getTransaction().begin();
-		}
-	}
 	
 	  public static void addFlashError(Map<String, List<ValidationError>> errors){
 		  for(String key : errors.keySet()){

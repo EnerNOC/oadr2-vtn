@@ -3,15 +3,15 @@
 @import helper._
 
 @import helper.twitterBootstrap._
-@main(Html("Requests"), "Requests") {
+@main(Html("OadrEvents"), "OadrEvents") {
 
 	<h3>Select Event:</h3>
 	<select name="program"">
 		@for(p <- programs){
 			@if(program == p.getEventDescriptor().getEventID()){
-				<option selected="selected" value="@routes.Requests.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>
+				<option selected="selected" value="@routes.OadrEvents.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>
 			}else{
-				<option value="@routes.Requests.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>		
+				<option value="@routes.OadrEvents.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>		
 			}
 		}
 	</select>
@@ -20,14 +20,21 @@
 	<h3>VEN Status</h3>	
 	<div id=xmlOutput></div>	
 
-	<script>	
+	<script>
+	/*
+		dropdownRedirect('program');
+		
+		ajaxTableChange('@routes.OadrEvents.renderAjaxTable(program)');
+		*/
+	
+	
 		$("select[name='program']").change(function(){
 			location.href= $(this).val();
 		});
 	
 		$(document).ready(function(){	
-			var loadRequests = function(){
-				$.post('@routes.Requests.renderAjaxTable(program)',
+			var loadOadrEvents = function(){
+				$.post('@routes.OadrEvents.renderAjaxTable(program)',
 						"",
 						function(data){
 							$('#xmlOutput').empty();
@@ -36,13 +43,14 @@
 							$(".refreshing").remove();
 				});
 			};
-				loadRequests();
+				loadOadrEvents();
 				$('#requestbutton').click(function(){
 					$(this).text("Loading request...");
-					loadRequests();
+					loadOadrEvents();
 					$(this).text("Refresh");
 				});
-				setInterval(loadRequests, 30000);
-		});		
+				setInterval(loadOadrEvents, 30000);
+		});	
+	
 	</script>
 }

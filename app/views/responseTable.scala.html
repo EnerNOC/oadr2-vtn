@@ -1,4 +1,4 @@
-@(statusList: List[StatusObject], program: String)
+@(statusList: List[VENStatus], program: String)
 
 @import helper._
 
@@ -32,7 +32,7 @@
 				</td>
 				<td>@status.displayTime()</td>
 				<td>
-					@form(routes.Requests.deleteRequest(program, status.getId())){
+					@form(routes.OadrEvents.deleteRequest(program, status.getId())){
 						<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 					}
 				</td>	

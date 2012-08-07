@@ -6,7 +6,7 @@
 GET	/						controllers.Events.index()
 
 # Test
-#GET /test					controllers.Requests.index()
+#GET /test					controllers.OadrEvents.index()
 
 # Event List
 GET /events					controllers.Events.events()
@@ -33,14 +33,14 @@ POST	/programs					controllers.Programs.newProgram()
 POST    /program/:id/delete       controllers.Programs.deleteProgram(id:Long)
 
 # Handle Request
-GET /requests/:program			controllers.Requests.requests(program:String)
-POST /requests			controllers.Requests.marshalRequest()
+GET /requests/:program			controllers.OadrEvents.requests(program:String)
+POST /requests			controllers.OadrEvents.sendHttpResponse()
 
 # Display Page
-POST /requests/display		controllers.Requests.renderAjaxTable(program:String)
+POST /requests/display		controllers.OadrEvents.renderAjaxTable(program:String)
 
 # Delete Request
-POST    /requests/:id/delete       controllers.Requests.deleteRequest(program:String, id:Long)
+POST    /requests/:id/delete       controllers.OadrEvents.deleteRequest(program:String, id:Long)
 
 # Customer List
 GET /customers					controllers.Customers.customers()
