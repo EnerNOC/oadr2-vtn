@@ -19,7 +19,6 @@ public class XmppService {
     private String password = System.getProperty("xmpp-pass");
         
     public XmppService(){
-        
         Logger.info("Built XmppService");
     }
     
@@ -37,6 +36,7 @@ public class XmppService {
         return new PacketListener(){
             @Override
             public void processPacket(Packet packet){
+                Logger.info("Got packet.");
                 Logger.info(packet.toString());
             }
         };
@@ -46,6 +46,7 @@ public class XmppService {
         return new PacketFilter(){
             @Override
             public boolean accept(Packet packet){
+                Logger.info("Accepted a packet.");
                 return packet.getExtension(OADR2_XMLNS) != null;
             }
         };
