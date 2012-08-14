@@ -67,7 +67,7 @@ public class EiEventForm{
 	@Required(message = ("Must enter an End Time"))
 	public String endTime;	
 	@Required(message = ("Must enter a Signal ID"))
-	public String signalID;
+	public String signalID = "0";
 	@Required(message = ("Must select a program, if one is not available please create one."))
 	public String marketContext;
 	
@@ -329,7 +329,7 @@ public class EiEventForm{
 	
 	//uses the regex to take the ISO8601 string and return
 	//the number of minutes contained in it
-	private int minutesFromXCal(String xCal){
+	public static int minutesFromXCal(String xCal){
 		Pattern p = Pattern.compile("P(?:(\\d+)W)?(?:(\\d+)D)?T?(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
 		Matcher m = p.matcher(xCal);
 		int returnMinutes = 0;

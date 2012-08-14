@@ -34,7 +34,7 @@
 						<td>@event.getEventDescriptor().getEventStatus()</td>
 						<td>@eventForm.displayReadableStart(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString())</td>
 						<td>@eventForm.displayReadableDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration())</td>
-						<td>@event.getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td>						
+						<!-- <td>@event.getEiEventSignals().getEiEventSignal().get(0).getSignalID()</td> -->					
 						<td>@event.getEventDescriptor().getEiMarketContext().getMarketContext()</td>							
 						<td>
 							@form(routes.Events.editEvent(event.getHjid())){

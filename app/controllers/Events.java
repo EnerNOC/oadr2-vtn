@@ -21,10 +21,12 @@ import models.ProgramForm;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
+import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
+import org.joda.time.DateTime;
 
 import play.Logger;
 import play.data.Form;
@@ -63,6 +65,9 @@ public class Events extends Controller {
 	  } 
 	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
 	  Collections.sort(eiEvents, new EiEventComparator());
+	  for(EiEvent e : eiEvents){
+	      updateStatus(e);
+	  }
 	  
 	  return ok(views.html.events.render(eiEvents, new EiEventForm()));
   }
@@ -142,9 +147,18 @@ public static Result blankEvent(){
   
   @Transactional
   public static void updateStatus(EiEvent event){
-      Date d = new Date();
-      event.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem();
-      Integer.parseInt(event.getEiActivePeriod().getProperties().getDuration().getDuration());
+      DateTime currentTime = new DateTime();
+      DateTime startTime = new DateTime(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
+      long endMillis = currentTime.getMillis() + EiEventForm.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration());
+      if(currentTime.getMillis() < startTime.getMillis()){
+          event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
+      }
+      else if(currentTime.getMillis() >= startTime.getMillis() && currentTime.getMillis() < endMillis){
+          event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.ACTIVE);
+      }
+      else if(currentTime.getMillis() >= endMillis){
+          event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);
+      }
   }
  
   @SuppressWarnings("unchecked")
