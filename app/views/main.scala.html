@@ -25,12 +25,9 @@
         </div>
 
         <div class="container">
-
-            <div class="content">
-                
+            <div class="content">                
                 <div class="page-header">
-                <b>@title</b>
-                
+                <b>@title</b>                
                 	@if(nav == "Events"){
                     	<a href=@routes.Events.blankEvent() id="add" class="btn success")>Create Event</a>
                     }
@@ -44,15 +41,12 @@
                     	<a id="requestbutton" class="btn">Refresh</a>
                     }
                 </div>
-
                 <div class="row">
                     <div class="span14">
                         @content
                     </div>
-                </div>
-                
+                </div>                
             </div>
-
 
             <footer>
                 <p>

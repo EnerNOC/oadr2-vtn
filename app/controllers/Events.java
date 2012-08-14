@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,6 +138,13 @@ public static Result blankEvent(){
 			  flash(key, error.message());
 		  }
 	  }	  
+  }
+  
+  @Transactional
+  public static void updateStatus(EiEvent event){
+      Date d = new Date();
+      event.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem();
+      Integer.parseInt(event.getEiActivePeriod().getProperties().getDuration().getDuration());
   }
  
   @SuppressWarnings("unchecked")

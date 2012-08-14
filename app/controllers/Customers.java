@@ -68,9 +68,9 @@ public class Customers extends Controller {
 	}
 	
 	//@Transactional
-	//gives stupid "Try marking with @Transactional" error, yeah, kinda was, kinda didnt work anyways
+	//gives stupid "Try marking with @Transactional" error, yeah, it kinda was, kinda didnt work anyways
 	public static Map<String, String> makeProgramMap(){
-	    //What the fk this works but JPA.em() doesn't? ya okay sweet bro
+	    //What the f this works but JPA.em() doesn't? ya okay sweet bro
 	    List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
 		//List<ProgramForm> programList = JPA.em().createQuery("FROM Program").getResultList();
 		Map<String, String> programMap = new HashMap<String, String>();

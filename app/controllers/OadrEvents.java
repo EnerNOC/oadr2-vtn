@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.inject.Inject;
@@ -26,6 +27,7 @@ import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.w3c.dom.Document;
 
 
+import play.Logger;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -37,7 +39,7 @@ public class OadrEvents extends Controller{
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
 	
-	@Inject static EiEventService httpService;
+	@Inject static EiEventService eiEventService;
 	@Inject static XmppService xmppService;
 			
 	@SuppressWarnings("unchecked")
@@ -66,34 +68,33 @@ public class OadrEvents extends Controller{
 			public int compare(VENStatus statusOne, VENStatus statusTwo){
 				return statusTwo.getTime().compareTo(statusOne.getTime());
 			}
-		}
-		
-		Collections.sort(listStatusObjects, new StatusObjectComparator());
-		
+		}				
+		Collections.sort(listStatusObjects, new StatusObjectComparator());		
 		return ok(views.html.responseTable.render(listStatusObjects, program));
 	}
 	
-	  @Transactional
-	  //Deletes an event based on the id
-	  public static Result deleteRequest(String program, Long id){
-		  JPA.em().remove(JPA.em().find(VENStatus.class, id));
-	      return redirect(routes.OadrEvents.requests(program));
-	  }
 	
-	  @Transactional
-	  public static Result sendHttpResponse()  throws Exception{
-	      return(httpService.sendMarshalledObject(unmarshalRequest()));
-	  }
-	  	  
-	  /* *************************************
-	   * Parsing of the XML from HTTP response
-	   * ************************************* */	 
-	  
-    public static Object unmarshalRequest()  throws Exception{    
-        JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        Object o = unmarshaller.unmarshal(new ByteArrayInputStream(play.mvc.Controller.request().body().asRaw().asBytes()));
-        return o;
-    }
+	@Transactional
+	public static Result sendXMPPRequest(String event) {
+	    xmppService.testRequest();
+	    return redirect(routes.OadrEvents.requests(event));
+	}
 	
+    @Transactional
+	public static Result sendXMPPCreated(String event){
+        return redirect(routes.OadrEvents.requests(event));
+	}
+	
+	
+	@Transactional
+	//Deletes an event based on the id
+	public static Result deleteRequest(String program, Long id){
+	    JPA.em().remove(JPA.em().find(VENStatus.class, id));
+	    return redirect(routes.OadrEvents.requests(program));
+	}
+	
+	@Transactional
+	public static Result sendHttpResponse() throws JAXBException{
+	    return(eiEventService.sendMarshalledObject(EiEventService.unmarshalRequest(request().body().asRaw().asBytes())));
+	}
 }

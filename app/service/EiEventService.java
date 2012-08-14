@@ -14,6 +14,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.inject.Inject;
 
 import models.CustomerForm;
 import models.VENStatus;
@@ -39,7 +40,7 @@ public class EiEventService{
     public EiEventService(){
     }
     
-    public Result sendMarshalledObject(Object o) throws JAXBException{
+    public static Result sendMarshalledObject(Object o) throws JAXBException{
         if(o instanceof OadrRequestEvent){
             return sendDistributeFromRequest(o);
         }
@@ -47,21 +48,24 @@ public class EiEventService{
         else if(o instanceof OadrCreatedEvent){
             return sendResponseFromCreated(o);
         }
-        return play.mvc.Action.badRequest(o.getClass().getCanonicalName() + " is not an acceptable incoming payload.");
+        else{
+            return play.mvc.Action.badRequest("Object was not of correct class");
+        }
     }    
     
     @Transactional
-    public Result sendResponseFromCreated(Object o) throws JAXBException{
+    public static Result sendResponseFromCreated(Object o) throws JAXBException{
         
         OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
         oCreatedEvent.getEiCreatedEvent().getVenID();
 
         onCreatedEvent(oCreatedEvent);
+        createNewEm();
+        entityManager.persist(oCreatedEvent);
+        entityManager.getTransaction().commit();
         
-        JPA.em().persist(oCreatedEvent);
-        
-        EiResponse eiResponse = new EiResponse()
-            .withRequestID(oCreatedEvent.getEiCreatedEvent().getEiResponse().getRequestID())
+        EiResponse eiResponse = new EiResponse()        
+            //.withRequestID(oCreatedEvent.getEiCreatedEvent().getEiResponse().getRequestID())
             //TODO Need to handle non 200 responses
             .withResponseCode("200")
             .withResponseDescription("Optional description!"); 
@@ -70,19 +74,20 @@ public class EiEventService{
     }
     
     @Transactional
-    public Result sendDistributeFromRequest(Object o) throws JAXBException{
-        
+    public static Result sendDistributeFromRequest(Object o) throws JAXBException{
         OadrRequestEvent oRequestEvent = (OadrRequestEvent) o;
-        EiResponse eiResponse = new EiResponse();
-        
-        eiResponse.setRequestID(oRequestEvent.getEiRequestEvent().getRequestID());
+        EiResponse eiResponse = new EiResponse(); 
+        if(oRequestEvent.getEiRequestEvent().getRequestID() != null){
+            eiResponse.setRequestID(oRequestEvent.getEiRequestEvent().getRequestID());
+        }
         //TODO Need to handle non 200 responses
         eiResponse.setResponseCode("200");
-
-        JPA.em().persist(oRequestEvent);
         
-        onRequestEvent(oRequestEvent);
+        createNewEm();
+        entityManager.persist(oRequestEvent);  
+        entityManager.getTransaction().commit();
         
+        onRequestEvent(oRequestEvent);    
         OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
         //Need to find out how to get EiEvent(s) and add them to this Distribute Event
         //Possibly from the Market Context, but need XPath to access, or find through VEN and Customers
@@ -93,69 +98,83 @@ public class EiEventService{
         return play.mvc.Action.ok(marshalObject(response));
     }
     
-    public String marshalObject(Object o) throws JAXBException{  
+    public static String marshalObject(Object o) throws JAXBException{  
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");    
         Marshaller marshaller = jaxbContext.createMarshaller();      
         StringWriter sw = new StringWriter();
         marshaller.marshal(o, sw);
         play.mvc.Controller.response().setContentType("application/xml");
+        //might not need the \n char
         return sw.toString() + '\n';
     }
         
     @SuppressWarnings("unchecked")
     @Transactional
-    public void onRequestEvent(OadrRequestEvent requestEvent){
-        
+    public static void onRequestEvent(OadrRequestEvent requestEvent){
         VENStatus venStatus = new VENStatus();
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
+        Logger.info(requestEvent.getEiRequestEvent().getVenID());
         
         CustomerForm customer = null;
         EiEvent event = null;
-        
-        customer = (CustomerForm)JPA.em().createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
+        createNewEm();
+        customer = (CustomerForm)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
-                .getSingleResult();
+                .getSingleResult();       
         
-        
-        List<VENStatus> statuses = JPA.em().createQuery("SELECT v FROM StatusObject v WHERE v.venID = :ven")
+        List<VENStatus> statuses = entityManager.createQuery("SELECT v FROM StatusObject v WHERE v.venID = :ven")
             .setParameter("ven", customer.getVenID())
             .getResultList();
         
-        if(statuses.size() == 0){        
+        if(statuses.size() == 0){    
+            Logger.info("Size == 0");
             venStatus.setProgram(customer.getProgramId());
             
-            event = (EiEvent)JPA.em().createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
+            event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
                     "marketContext WHERE marketContext.marketContext = :market and event.hjid = marketContext.hjid")
                     .setParameter("market", venStatus.getProgram())
                     .getSingleResult();
                     
             if(customer != null && event != null){  
+                Logger.info("Persisting i hope!");
                 venStatus.setEventID(event.getEventDescriptor().getEventID());
-                JPA.em().persist(venStatus);
+                createNewEm();
+                entityManager.persist(venStatus);
+                entityManager.getTransaction().commit();
             }
         }
+        Logger.info("End request event");
     }
 
     @Transactional
-    public void onCreatedEvent(OadrCreatedEvent createdEvent){
+    public static void onCreatedEvent(OadrCreatedEvent createdEvent){
         VENStatus status = null;
-        status = (VENStatus)JPA.em().createQuery("SELECT status FROM StatusObject " +
+        status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
                 "status WHERE status.venID = :ven")
                 .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                 .getSingleResult();
         if(status != null){
             status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
             status.setTime(new Date());
-            JPA.em().merge(status);         
+            createNewEm();
+            entityManager.merge(status);    
+            entityManager.getTransaction().commit();
         }
     }
     
-    public static Object unmarshalRequest()  throws Exception{    
+    public static Object unmarshalRequest(byte[] chars ) throws JAXBException{    
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        Object o = unmarshaller.unmarshal(new ByteArrayInputStream(play.mvc.Controller.request().body().asRaw().asBytes()));
+        Object o = unmarshaller.unmarshal(new ByteArrayInputStream(chars));
         return o;
+    }
+    
+    public static void createNewEm(){
+        entityManager = entityManagerFactory.createEntityManager();
+        if(!entityManager.getTransaction().isActive()){
+            entityManager.getTransaction().begin();
+        }
     }
     
 }

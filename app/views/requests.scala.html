@@ -15,18 +15,23 @@
 			}
 		}
 	</select>
-	<p>
-	</p>
+	<!-- 
+	<br>
+	<br>
+	<a href=@routes.OadrEvents.sendXMPPRequest(program) class="btn")>XMPP Request</a>
+	<a href=@routes.OadrEvents.sendXMPPCreated(program) class="btn")>XMPP Created</a>
+	<br>
+	<br>
+	-->
 	<h3>VEN Status</h3>	
 	<div id=xmlOutput></div>	
 
 	<script>
-	/*
+		/*
 		dropdownRedirect('program');
 		
 		ajaxTableChange('@routes.OadrEvents.renderAjaxTable(program)');
 		*/
-	
 	
 		$("select[name='program']").change(function(){
 			location.href= $(this).val();

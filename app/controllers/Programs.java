@@ -61,7 +61,6 @@ public static Result programs(){
 	  }
 	  else{
 		  ProgramForm newProgram = filledForm.get();
-		  //Logger.info(newProgram.getProgramName() + " " + newProgram.getProgramURI() + " " + newProgram.getId());
 		  JPA.em().persist(newProgram);
 		  flash("success", "Program as been created");
 	  }
@@ -76,7 +75,6 @@ public static Result programs(){
 	  List<CustomerForm> customers = JPA.em().createQuery("FROM Customers").getResultList();
 	  
 	  for(CustomerForm customer : customers){
-		  //Logger.info("Customer: " + customer.getProgramId());
 		  if(Long.parseLong(customer.getProgramId()) == id){
 			  flash("failure", "Cannot delete program. Please delete customers using the program first");
 			  return redirect(routes.Programs.programs());

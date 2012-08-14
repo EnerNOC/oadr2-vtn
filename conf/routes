@@ -42,6 +42,10 @@ POST /requests/display		controllers.OadrEvents.renderAjaxTable(program:String)
 # Delete Request
 POST    /requests/:id/delete       controllers.OadrEvents.deleteRequest(program:String, id:Long)
 
+# XMPP Test
+GET /test/request				controllers.OadrEvents.sendXMPPRequest(event:String)
+GET /test/created				controllers.OadrEvents.sendXMPPCreated(event:String)
+
 # Customer List
 GET /customers					controllers.Customers.customers()
 
