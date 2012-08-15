@@ -72,14 +72,6 @@ public static Result programs(){
   @Transactional
   public static Result deleteProgram(Long id){
 	  ProgramForm program = JPA.em().find(ProgramForm.class, id);
-	  List<CustomerForm> customers = JPA.em().createQuery("FROM Customers").getResultList();
-	  
-	  for(CustomerForm customer : customers){
-		  if(Long.parseLong(customer.getProgramId()) == id){
-			  flash("failure", "Cannot delete program. Please delete customers using the program first");
-			  return redirect(routes.Programs.programs());
-		  }
-	  }
 	  flash("success", "Program has been deleted");
 	  JPA.em().remove(program);
 	  return redirect(routes.Programs.programs());

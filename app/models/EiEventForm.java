@@ -56,8 +56,8 @@ public class EiEventForm{
 	@Min(message = "Priority must be greater than zero", value = 1)
 	@Valid
 	public long priority;
-	@Required(message = "Must select a status")
-	public String status;
+	//@Required(message = "Must select a status")
+	public String status = "none";
 	@Required(message = "Must enter a Start Date")
 	public String startDate;
 	@Required(message = ("Must enter a Start Time"))
@@ -66,7 +66,7 @@ public class EiEventForm{
 	public String endDate;
 	@Required(message = ("Must enter an End Time"))
 	public String endTime;	
-	@Required(message = ("Must enter a Signal ID"))
+	//@Required(message = ("Must enter a Signal ID"))
 	public String signalID = "0";
 	@Required(message = ("Must select a program, if one is not available please create one."))
 	public String marketContext;
@@ -131,11 +131,9 @@ public class EiEventForm{
 		  }
 	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start);
 		  return eiEvent = new EiEvent()
-		  					.withEiTarget(null)
 		  					.withEventDescriptor(new EventDescriptor()
 	  							.withEventID(eventID)
 	  							.withPriority(priority)
-	  							.withEventStatus(EventStatusEnumeratedType.fromValue(status))
 	  							.withCreatedDateTime(startDttm))
 		  					.withEiActivePeriod(new EiActivePeriod()
 	  							.withProperties(new Properties()

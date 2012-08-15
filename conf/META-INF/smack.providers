@@ -37,4 +37,9 @@
 		<namespace>http://openadr.org/oadr-2.0a/2012/03</namespace>
 		<className>test.XMPPExtensionProvider</className>
 	</extensionProvider>
+	<extensionProvider>
+		<elementName>oadrResponse</elementName>
+		<namespace>http://openadr.org/oadr-2.0a/2012/03</namespace>
+		<className>test.XMPPExtensionProvider</className>
+	</extensionProvider>
 </smackProviders>

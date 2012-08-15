@@ -29,12 +29,13 @@
 		    <h3>Event Descriptor</h3>    
 				@inputText(eiEventsForm("eventID"), '_label -> "Event ID")
 				@inputText(eiEventsForm("priority"), '_label -> "Priority")
-				@select(
+				<!-- @select(
                 eiEventsForm("status"), 
                 options(eiEvent.statusTypes), 
 	                '_label -> "Status", '_default -> "-- Choose a status type --",
 	                '_showConstraints -> false
 	            )
+	            -->
 			
 			<h3>Active Period</h3>
 			@if(flash.containsKey("badEnd")){

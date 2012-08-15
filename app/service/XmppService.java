@@ -6,23 +6,31 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import play.Logger;
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
 
 import test.*;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 
 import org.enernoc.open.oadr2.model.EiCreatedEvent;
+import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiRequestEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.EventResponses;
 import org.enernoc.open.oadr2.model.EventResponses.EventResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
+import org.enernoc.open.oadr2.model.OadrDistributeEvent;
+import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
+import org.enernoc.open.oadr2.model.OadrResponse;
 import org.enernoc.open.oadr2.model.OptTypeType;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -43,13 +51,16 @@ public class XmppService {
     
     private XMPPConnection vtnConnection;
     private XMPPConnection testConnection;
-        
+            
     //TODO add these to a config file like spring config or something, hardcoded for now
     private String vtnUsername = "xmpp-vtn";
     private String vtnPassword = "xmpp-pass";
     
     Marshaller marshaller;
     DatatypeFactory xmlDataTypeFac;
+    
+    static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
+    static EntityManager entityManager = entityManagerFactory.createEntityManager();
         
     public XmppService() throws XMPPException, InstantiationException, IllegalAccessException, JAXBException{
         //Add for debugging
@@ -79,27 +90,25 @@ public class XmppService {
                 Object packetObject = null;
                 try {
                     packetObject = EiEventService.unmarshalRequest(extension.toXML().getBytes());
-                } catch (JAXBException e1) {}
+                } catch (JAXBException e) {}
                 if(packetObject instanceof OadrRequestEvent || packetObject instanceof OadrCreatedEvent){
                     if(packetObject instanceof OadrRequestEvent){
+                        OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
+                        EiEventService.onRequestEvent(requestEvent);
                         try {
-                            OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
-                            EiEventService.sendMarshalledObject(requestEvent);
-                        } catch (JAXBException e) {}
+                            sendXMPPDistribute(requestEvent);
+                        } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPDistribute");
+                        }
                     }
                     else if(packetObject instanceof OadrCreatedEvent){
                         OadrCreatedEvent createdEvent = (OadrCreatedEvent)packetObject;
+                        EiEventService.onCreatedEvent(createdEvent);
                         try {
-                            EiEventService.sendMarshalledObject(createdEvent);
-                        } catch (JAXBException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            sendXMPPResponse(createdEvent);
+                        } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPResponse");
                         }
                     }
-                }    
-                else{
-                    Logger.info("='(");
-                }            
+                }          
             }
         };
     }
@@ -128,8 +137,50 @@ public class XmppService {
                connection.login(username, password, resource);
            }
        }
+       /*
        Presence presence = new Presence(Presence.Type.available);
        connection.sendPacket(presence);
+       */
        return connection;
     }
+    
+    @Transactional
+    public void sendXMPPDistribute(OadrRequestEvent request) throws JAXBException{
+        createNewEm();
+        String eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
+            .setParameter("ven", request.getEiRequestEvent().getVenID())
+            .getSingleResult();
+        createNewEm();
+        EiEvent event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
+                "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
+                .setParameter("id", eventId)
+                .getSingleResult();
+        OadrDistributeEvent distributeEvent = new OadrDistributeEvent().withOadrEvent(new OadrEvent().withEiEvent(event))
+                .withEiResponse(new EiResponse().withResponseCode("200"));
+        StringWriter out = new StringWriter();
+        marshaller.marshal(distributeEvent, out);
+        Logger.info(out.toString());
+        /*
+        OADR2IQ iq = new OADR2IQ(new OADR2PacketExtension(distributeEvent, marshaller));
+        iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+        vtnConnection.sendPacket(iq);
+        */
+    }
+    
+    public void sendXMPPResponse(OadrCreatedEvent createdEvent) throws JAXBException{
+        OadrResponse response = new OadrResponse();
+        response.withEiResponse(new EiResponse().withRequestID(createdEvent.getEiCreatedEvent().getEiResponse().getRequestID())
+                .withResponseCode("200"));
+        StringWriter out = new StringWriter();
+        marshaller.marshal(response, out);
+        Logger.info(out.toString());
+    }
+    
+    public static void createNewEm(){
+        entityManager = entityManagerFactory.createEntityManager();
+        if(!entityManager.getTransaction().isActive()){
+            entityManager.getTransaction().begin();
+        }
+    }
+    
 }

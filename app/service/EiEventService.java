@@ -114,7 +114,6 @@ public class EiEventService{
         VENStatus venStatus = new VENStatus();
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
-        Logger.info(requestEvent.getEiRequestEvent().getVenID());
         
         CustomerForm customer = null;
         EiEvent event = null;
@@ -128,7 +127,6 @@ public class EiEventService{
             .getResultList();
         
         if(statuses.size() == 0){    
-            Logger.info("Size == 0");
             venStatus.setProgram(customer.getProgramId());
             
             event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
@@ -137,14 +135,12 @@ public class EiEventService{
                     .getSingleResult();
                     
             if(customer != null && event != null){  
-                Logger.info("Persisting i hope!");
                 venStatus.setEventID(event.getEventDescriptor().getEventID());
                 createNewEm();
                 entityManager.persist(venStatus);
                 entityManager.getTransaction().commit();
             }
         }
-        Logger.info("End request event");
     }
 
     @Transactional
@@ -162,7 +158,7 @@ public class EiEventService{
             entityManager.getTransaction().commit();
         }
     }
-    
+    //
     public static Object unmarshalRequest(byte[] chars ) throws JAXBException{    
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
