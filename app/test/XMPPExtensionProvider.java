@@ -8,6 +8,8 @@ import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.PacketExtensionProvider;
 import org.xmlpull.v1.XmlPullParser;
 
+import play.Logger;
+
 public class XMPPExtensionProvider implements PacketExtensionProvider, IQProvider {
 
     JAXBManager jaxb;
@@ -36,12 +38,14 @@ public class XMPPExtensionProvider implements PacketExtensionProvider, IQProvide
     
     @Override
     public PacketExtension parseExtension(XmlPullParser pullParser) throws Exception {
+        Logger.info("Parsing extension");
 //      System.out.println( "++++++++++++++++++++++++++ Parsing Extension!!!" );
         return new OADR2PacketExtension( unmarshaller.unmarshalSubTree(pullParser), this.jaxb );        
     }
 
     @Override
     public IQ parseIQ(XmlPullParser parser) throws Exception {
+        Logger.info("Parsing iq");
 //      System.out.println( "++++++++++++++++++++++++++ Parsing IQ!!!" );
         return new OADR2IQ( parseExtension(parser) );
     }

@@ -25,10 +25,9 @@ public class CustomerForm{
 	@Column(name = "CUSTOMERNAME")
 	private String customerName;
 	
-	@ElementCollection
-	@Column(name = "VENS")
-	private List <String> vens = new ArrayList<String>();
-	//private List<VenForm> vens;
+	@Required(message = "Must enter a Client URI")
+	@Column(name = "CLIENTURI")
+	private String clientURI;
 	
     @Id
     @Column(name = "ID")
@@ -68,21 +67,21 @@ public class CustomerForm{
 	public void setId(long id) {
 		this.id = id;
 	}
-
-	public List <String> getVens() {
-		return vens;
-	}
-
-	public void setVens(List <String> vens) {
-		this.vens = vens;
-	}
-
+	
     public String getCustomerName() {
         return customerName;
     }
 
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
+    }
+
+    public String getClientURI() {
+        return clientURI;
+    }
+
+    public void setClientURI(String clientURI) {
+        this.clientURI = clientURI;
     }
 
 }

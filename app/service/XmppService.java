@@ -2,6 +2,7 @@ package service;
 
 import java.io.StringWriter;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -9,8 +10,8 @@ import play.Logger;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
-
 import test.*;
+
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -19,6 +20,8 @@ import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
+
+import models.CustomerForm;
 
 import org.enernoc.open.oadr2.model.EiCreatedEvent;
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -49,14 +52,14 @@ public class XmppService {
         
     private ConnectionConfiguration connConfig = new ConnectionConfiguration("msawant-mbp.local", 5222);
     
-    private XMPPConnection vtnConnection;
+    private static XMPPConnection vtnConnection;
     private XMPPConnection testConnection;
             
     //TODO add these to a config file like spring config or something, hardcoded for now
     private String vtnUsername = "xmpp-vtn";
     private String vtnPassword = "xmpp-pass";
     
-    Marshaller marshaller;
+    static Marshaller marshaller;
     DatatypeFactory xmlDataTypeFac;
     
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
@@ -64,15 +67,16 @@ public class XmppService {
         
     public XmppService() throws XMPPException, InstantiationException, IllegalAccessException, JAXBException{
         //Add for debugging
-        //Connection.DEBUG_ENABLED = true;
-        vtnConnection = connect(vtnUsername, vtnPassword, "vtn");
-        vtnConnection.addPacketListener(oadrPacketListener(), oadrPacketFilter());
+        //
+        Connection.DEBUG_ENABLED = true;
+        if(vtnConnection == null){
+            vtnConnection = connect(vtnUsername, vtnPassword, "vtn");
+        }
         
         //testConnection = connect("test", "xmpp-pass", "vtn");        
 
         JAXBManager jaxb = new JAXBManager();
-        marshaller = jaxb.createMarshaller();
-        
+        marshaller = jaxb.createMarshaller();        
     }
     
     public XmppService(String username, String password){
@@ -133,14 +137,12 @@ public class XmppService {
        XMPPConnection connection = new XMPPConnection(connConfig);
        if(!connection.isConnected()){
            connection.connect();
-           if(connection.getUser() == null){
+           if(connection.getUser() == null && !connection.isAuthenticated()){
+               //Logger.info("User: " + connection.getUser());
                connection.login(username, password, resource);
+               connection.addPacketListener(oadrPacketListener(), oadrPacketFilter());
            }
        }
-       /*
-       Presence presence = new Presence(Presence.Type.available);
-       connection.sendPacket(presence);
-       */
        return connection;
     }
     
@@ -163,6 +165,7 @@ public class XmppService {
         /*
         OADR2IQ iq = new OADR2IQ(new OADR2PacketExtension(distributeEvent, marshaller));
         iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+        iq.setType(IQ.Type.SET);
         vtnConnection.sendPacket(iq);
         */
     }
@@ -173,14 +176,56 @@ public class XmppService {
                 .withResponseCode("200"));
         StringWriter out = new StringWriter();
         marshaller.marshal(response, out);
-        Logger.info(out.toString());
+        //Logger.info(out.toString());
+        
+        IQ iq = new OADR2IQ(new OADR2PacketExtension(response, marshaller));
+        //Need to find out how to send the response directly to the user who sent the request
+        iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+        iq.setType(IQ.Type.SET);
+        vtnConnection.sendPacket(iq);
+        
     }
-    
+        
     public static void createNewEm(){
         entityManager = entityManagerFactory.createEntityManager();
         if(!entityManager.getTransaction().isActive()){
             entityManager.getTransaction().begin();
         }
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Transactional
+    public static void sendEventOnCreate(EiEvent e) throws JAXBException{
+        createNewEm();
+        
+        List<CustomerForm> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
+                .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext())
+                .getResultList();
+        
+        for(CustomerForm customer: customers){
+            OadrDistributeEvent distribute = new OadrDistributeEvent()
+            .withOadrEvent(new OadrEvent().withEiEvent(e))
+            .withVtnID(vtnConnection.getUser());
+            IQ iq = new OADR2IQ(new OADR2PacketExtension(distribute, marshaller));
+            Logger.info("Customer Client URI: " + customer.getClientURI());
+            //iq.setTo(customer.getClientURI());
+            iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+            iq.setType(IQ.Type.SET);
+            //Logger.info("Vtn Authenticated: " + vtnConnection.isAuthenticated() + ", Vtn Connected: " + vtnConnection.isConnected());
+            vtnConnection.sendPacket(iq); //throws a null pointer exception, check if vtn is connected or not kthxbai
+            
+        }
+        /*
+        StringWriter out = new StringWriter();
+        OadrDistributeEvent distribute = new OadrDistributeEvent()
+            .withOadrEvent(new OadrEvent().withEiEvent(e))
+            .withVtnID(vtnConnection.getUser());
+        if(distribute == null) Logger.info("Distribute null");
+        if(out == null) Logger.info("Out null");
+        marshaller.marshal(distribute, out);
+        Logger.info(out.toString());
+        */
+        
     }
     
 }

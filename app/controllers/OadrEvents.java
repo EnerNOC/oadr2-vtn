@@ -13,7 +13,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.inject.Inject;
+import com.google.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import models.VENStatus;
@@ -45,7 +45,6 @@ public class OadrEvents extends Controller{
 	@SuppressWarnings("unchecked")
     @Transactional
 	public static Result requests(String program) {
-	    //List<ProgramForm> programs = JPA.em().createQuery("FROM Program").getResultList();
 	    List<EiEvent> programs = JPA.em().createQuery("From EiEvent").getResultList();
 		return ok(views.html.requests.render(program, programs));
 	}

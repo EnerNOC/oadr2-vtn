@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -118,10 +119,12 @@ public class EiEventService{
         CustomerForm customer = null;
         EiEvent event = null;
         createNewEm();
+        //Change this to throw an exception then catch it and return a 500/400 error
+        try{
         customer = (CustomerForm)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();       
-        
+        }catch(NoResultException e){}
         List<VENStatus> statuses = entityManager.createQuery("SELECT v FROM StatusObject v WHERE v.venID = :ven")
             .setParameter("ven", customer.getVenID())
             .getResultList();
@@ -136,6 +139,7 @@ public class EiEventService{
                     
             if(customer != null && event != null){  
                 venStatus.setEventID(event.getEventDescriptor().getEventID());
+                venStatus.setOptStatus("Pending 1");
                 createNewEm();
                 entityManager.persist(venStatus);
                 entityManager.getTransaction().commit();

@@ -35,9 +35,7 @@ body {
 }
 
 .page-header .btn {
-	position: absolute;
-	margin: -5px 140px 0px;
-	right: 0;
+	float: right;
 }
 
 .topbar .btn {

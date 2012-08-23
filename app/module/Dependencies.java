@@ -1,7 +1,7 @@
 package module;
 
 import com.google.inject.Provides;
-import javax.inject.Singleton;
+import com.google.inject.Singleton;
 import javax.xml.bind.JAXBException;
 
 import org.jivesoftware.smack.XMPPException;
