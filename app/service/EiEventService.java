@@ -51,7 +51,8 @@ public class EiEventService{
             return sendResponseFromCreated(o);
         }
         else if(o instanceof OadrResponse){
-            return play.mvc.Action.ok("Got a response");
+            persistFromResponse((OadrResponse)o);
+            return play.mvc.Action.ok();
         }
         else{
             return play.mvc.Action.badRequest("Object was not of correct class");
@@ -100,11 +101,13 @@ public class EiEventService{
             eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
                 .setParameter("ven", oRequestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();        
+            
             event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
                     "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
                     .setParameter("id", eventId)
-                    .getSingleResult();                
-        }catch(NoResultException e){};
+                    .getSingleResult();   
+            
+        }catch(NoResultException e){e.printStackTrace();};
         response.withOadrEvent(new OadrEvent().withEiEvent(event));
         response.withRequestID(eiResponse.getRequestID());
         return play.mvc.Action.ok(marshalObject(response));
@@ -122,13 +125,14 @@ public class EiEventService{
     @SuppressWarnings("unchecked")
     @Transactional
     public static void persistFromRequestEvent(OadrRequestEvent requestEvent){
+        createNewEm();
         VENStatus venStatus = null;
         try{
-            venStatus = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+            venStatus = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                     .getSingleResult();
-        }catch(NoResultException e){};
+        }catch(NoResultException e){Logger.info("Exception!");};
         if(venStatus == null){
             venStatus = new VENStatus();
         }
@@ -147,30 +151,29 @@ public class EiEventService{
         List<VENStatus> statuses = entityManager.createQuery("SELECT v FROM StatusObject v WHERE v.venID = :ven")
             .setParameter("ven", customer.getVenID())
             .getResultList();
+          
+        venStatus.setProgram(customer.getProgramId());
         
-        if(statuses.size() == 0){    
-            venStatus.setProgram(customer.getProgramId());
-            
-            event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
-                    "marketContext WHERE marketContext.marketContext = :market and event.hjid = marketContext.hjid")
-                    .setParameter("market", venStatus.getProgram())
-                    .getSingleResult();
-                    
-            if(customer != null && event != null){  
-                venStatus.setEventID(event.getEventDescriptor().getEventID());
-                venStatus.setOptStatus("Pending 2");
-                createNewEm();
-                entityManager.merge(venStatus);
-                entityManager.getTransaction().commit();
-            }
+        event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
+                "marketContext WHERE marketContext.marketContext = :market and event.hjid = marketContext.hjid")
+                .setParameter("market", venStatus.getProgram())
+                .getSingleResult();
+                
+        if(customer != null && event != null){  
+            venStatus.setEventID(event.getEventDescriptor().getEventID());
+            venStatus.setOptStatus("Pending 2");
+            createNewEm();
+            entityManager.merge(venStatus);
+            entityManager.getTransaction().commit();
         }
     }
 
     @Transactional
     public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
+        createNewEm();
         VENStatus status = null;        
         try{
-            status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+            status = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                     .getSingleResult();
@@ -186,8 +189,9 @@ public class EiEventService{
     
     public static void persistFromEiEvent(EiEvent eiEvent){        
         VENStatus status = null;
+        createNewEm();
         try{
-            status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+            status = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", eiEvent.getEventDescriptor().getEventID())
                     .getSingleResult();
@@ -197,6 +201,25 @@ public class EiEventService{
             status.setTime(new Date());
             createNewEm();
             entityManager.merge(status);
+            entityManager.getTransaction().commit();
+        }
+    }
+    
+    public static void persistFromResponse(OadrResponse response){
+        VENStatus status = null;
+        createNewEm();
+        try{
+            status = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
+                    "status WHERE status.requestID = :requestId")
+                    .setParameter("requestId", response.getEiResponse().getRequestID())
+                    .getResultList().get(1);
+        }catch(NoResultException e){};
+        if(status != null){
+            status.setTime(new Date());
+            status.setOptStatus("Pending 2");
+            createNewEm();
+            entityManager.merge(status);
+            entityManager.getTransaction().commit();
         }
     }
     

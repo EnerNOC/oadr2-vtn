@@ -30,6 +30,7 @@ import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import service.EiEventService;
 import service.XmppService;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
@@ -91,9 +92,12 @@ public class Events extends Controller {
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
     		  JPA.em().persist(newEvent);	  
     		  //Here need to persist the entities for the Pending 1 state!
-    		  
+    		  EiEventService.persistFromEiEvent(newEvent);
     		  
     		  flash("success", "Event as been created");
+
+    		  populateFromPush(newEvent);
+    		  
     		  XmppService.sendEventOnCreate(newEvent);
     		  return redirect(routes.Events.newEvent());		  
     	  }
@@ -155,24 +159,29 @@ public class Events extends Controller {
           else if(currentTime.getMillis() >= endMillis){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);
           }
+          else{
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);
+          }
       }
       
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
-          List<CustomerForm> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :program")
+          List<CustomerForm> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
                   .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                   .getResultList();
           for(CustomerForm c : customers){
               VENStatus v = new VENStatus();
               v.setOptStatus("Pending 1");
+              //TODO Need to make the Request ID a UNIQUE Alpha Numeric string! Ask Brian/Thom if that is correct
+              v.setRequestID(e.getEventDescriptor().getEventID());
               v.setEventID(e.getEventDescriptor().getEventID());
               Logger.info("Program is: " + c.getProgramId());
               v.setProgram(c.getProgramId());
               v.setVenID(c.getVenID());
               v.setTime(new Date());
-          }
-          
+              JPA.em().persist(v);              
+          }          
       }
      
       @SuppressWarnings("unchecked")
