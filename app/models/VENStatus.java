@@ -38,30 +38,39 @@ public class VENStatus {
 	public long getId() {
 		return id;
 	}
+	
 	public void setId(long id) {
 		this.id = id;
 	}
+	
 	public String getEventID() {
 		return eventID;
 	}
+	
 	public void setEventID(String eventId) {
 		this.eventID = eventId;
 	}
+	
 	public String getVenID() {
 		return venID;
 	}
+	
 	public void setVenID(String venID) {
 		this.venID = venID;
 	}
+	
 	public String getOptStatus() {
 		return optStatus;
 	}
+	
 	public void setOptStatus(String optStatus) {
 		this.optStatus = optStatus;
 	}
+	
 	public String getProgram() {
 		return program;
 	}
+	
 	public void setProgram(String program) {
 		this.program = program;
 	}
@@ -74,12 +83,15 @@ public class VENStatus {
 				"\nStatus: " + this.optStatus +
 				"\nTime: " + this.time.toString());
 	}
+	
 	public Date getTime() {
 		return time;
 	}
+	
 	public void setTime(Date time) {
 		this.time = time;
 	}
+	
 	public String displayTime(){
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy @ h:mm aa");
 		return(dateFormat.format(time));

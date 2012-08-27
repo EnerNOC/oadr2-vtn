@@ -1,7 +1,5 @@
 package controllers;
 
-import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -10,13 +8,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
 import models.ProgramForm;
-import models.VENStatus;
-import models.CustomerForm;
-
-import org.enernoc.open.oadr2.model.EiEvent.*;
-import org.enernoc.open.oadr2.model.EiEvent;
-
-import play.Logger;
 import play.data.Form;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;

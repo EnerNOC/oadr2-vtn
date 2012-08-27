@@ -2,6 +2,7 @@ package controllers;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,14 +13,17 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
+import models.CustomerForm;
 import models.EiEventForm;
 import models.ProgramForm;
+import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.joda.time.DateTime;
 
+import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -85,8 +89,7 @@ public class Events extends Controller {
     		  EiEvent newEvent = newEventForm.toEiEvent();
     		  String contextName = JPA.em().find(ProgramForm.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
-    		  JPA.em().persist(newEvent);
-    		  
+    		  JPA.em().persist(newEvent);	  
     		  //Here need to persist the entities for the Pending 1 state!
     		  
     		  
@@ -152,6 +155,24 @@ public class Events extends Controller {
           else if(currentTime.getMillis() >= endMillis){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);
           }
+      }
+      
+      @SuppressWarnings("unchecked")
+      @Transactional
+      public static void populateFromPush(EiEvent e){
+          List<CustomerForm> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :program")
+                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
+                  .getResultList();
+          for(CustomerForm c : customers){
+              VENStatus v = new VENStatus();
+              v.setOptStatus("Pending 1");
+              v.setEventID(e.getEventDescriptor().getEventID());
+              Logger.info("Program is: " + c.getProgramId());
+              v.setProgram(c.getProgramId());
+              v.setVenID(c.getVenID());
+              v.setTime(new Date());
+          }
+          
       }
      
       @SuppressWarnings("unchecked")

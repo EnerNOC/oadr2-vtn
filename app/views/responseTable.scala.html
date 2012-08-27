@@ -26,7 +26,11 @@
 						@if(status.getOptStatus == "OPT_IN"){
 							<a disabled="disabled" class="btn success">Opted In</a>
 						}else{
-							<a disabled="disabled" class="btn">Pending</a>
+							@if(status.getOptStatus == "Pending 1"){
+								<a disabled="disabled" class="btn">Pending 1</a>
+							}else{
+								<a disabled="disabled" class="btn">Pending 2</a>
+							}
 						}
 					}
 				</td>

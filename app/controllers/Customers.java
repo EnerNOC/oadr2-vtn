@@ -1,22 +1,15 @@
 package controllers;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
-import org.enernoc.open.oadr2.model.EiEvent;
-
 import models.ProgramForm;
-import models.VENStatus;
 import models.CustomerForm;
-import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -69,7 +62,8 @@ public class Customers extends Controller {
 	
 	//@Transactional
 	//gives stupid "Try marking with @Transactional" error, yeah, it kinda was, kinda didnt work anyways
-	public static Map<String, String> makeProgramMap(){
+	@SuppressWarnings("unchecked")
+    public static Map<String, String> makeProgramMap(){
 	    //What the f this works but JPA.em() doesn't? ya okay sweet bro
 	    List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
 		//List<ProgramForm> programList = JPA.em().createQuery("FROM Program").getResultList();

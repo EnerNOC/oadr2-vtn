@@ -24,6 +24,7 @@ import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
+import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.w3c.dom.Document;
 
@@ -60,7 +61,7 @@ public class EiEventService{
         OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
         oCreatedEvent.getEiCreatedEvent().getVenID();
 
-        onCreatedEvent(oCreatedEvent);
+        persistCreatedEvent(oCreatedEvent);
         createNewEm();
         entityManager.persist(oCreatedEvent);
         entityManager.getTransaction().commit();
@@ -88,12 +89,23 @@ public class EiEventService{
         entityManager.persist(oRequestEvent);  
         entityManager.getTransaction().commit();
         
-        onRequestEvent(oRequestEvent);    
+        persistRequestEvent(oRequestEvent);    
         OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
         //Need to find out how to get EiEvent(s) and add them to this Distribute Event
-        //Possibly from the Market Context, but need XPath to access, or find through VEN and Customers
+        //Possibly from the Market Context, but need XPath to access, or find through VEN and Customers        
+
+        String eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
+            .setParameter("ven", oRequestEvent.getEiRequestEvent().getVenID())
+            .getSingleResult();
         
-        //response.withOadrEvent(null);
+        EiEvent event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
+                "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
+                .setParameter("id", eventId)
+                .getResultList();
+        
+        //Get the EiEvent and add it to the response.withOadrEvent(EiEvent from query where Event has market context == o.marketContext);
+        
+        response.withOadrEvent(new OadrEvent().withEiEvent(event));
         response.withRequestID(eiResponse.getRequestID());
 
         return play.mvc.Action.ok(marshalObject(response));
@@ -105,13 +117,12 @@ public class EiEventService{
         StringWriter sw = new StringWriter();
         marshaller.marshal(o, sw);
         play.mvc.Controller.response().setContentType("application/xml");
-        //might not need the \n char
         return sw.toString() + '\n';
     }
         
     @SuppressWarnings("unchecked")
     @Transactional
-    public static void onRequestEvent(OadrRequestEvent requestEvent){
+    public static void persistRequestEvent(OadrRequestEvent requestEvent){
         VENStatus venStatus = new VENStatus();
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
@@ -148,7 +159,7 @@ public class EiEventService{
     }
 
     @Transactional
-    public static void onCreatedEvent(OadrCreatedEvent createdEvent){
+    public static void persistCreatedEvent(OadrCreatedEvent createdEvent){
         VENStatus status = null;
         status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
                 "status WHERE status.venID = :ven")
@@ -163,7 +174,7 @@ public class EiEventService{
         }
     }
     //
-    public static Object unmarshalRequest(byte[] chars ) throws JAXBException{    
+    public static Object unmarshalRequest(byte[] chars) throws JAXBException{    
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         Object o = unmarshaller.unmarshal(new ByteArrayInputStream(chars));
