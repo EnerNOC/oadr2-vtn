@@ -35,6 +35,9 @@ public class VENStatus {
 	@Column(name = "TIME")
 	private Date time;
 	
+	@Column(name = "REQUESTID")
+	private String requestID;
+	
 	public long getId() {
 		return id;
 	}
@@ -94,8 +97,15 @@ public class VENStatus {
 	
 	public String displayTime(){
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy @ h:mm aa");
-		return(dateFormat.format(time));
-	}
+		return(dateFormat.format(time));	}
+
+    public String getRequestID() {
+        return requestID;
+    }
+
+    public void setRequestID(String requestID) {
+        this.requestID = requestID;
+    }
 	
 	
 }

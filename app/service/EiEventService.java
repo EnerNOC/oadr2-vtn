@@ -26,6 +26,7 @@ import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
+import org.enernoc.open.oadr2.model.OadrResponse;
 import org.w3c.dom.Document;
 
 import play.Logger;
@@ -46,9 +47,11 @@ public class EiEventService{
         if(o instanceof OadrRequestEvent){
             return sendDistributeFromRequest(o);
         }
-        //if its a created event send out a distribute event
         else if(o instanceof OadrCreatedEvent){
             return sendResponseFromCreated(o);
+        }
+        else if(o instanceof OadrResponse){
+            return play.mvc.Action.ok("Got a response");
         }
         else{
             return play.mvc.Action.badRequest("Object was not of correct class");
@@ -59,15 +62,14 @@ public class EiEventService{
     public static Result sendResponseFromCreated(Object o) throws JAXBException{
         
         OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
-        oCreatedEvent.getEiCreatedEvent().getVenID();
+        oCreatedEvent.getEiCreatedEvent().getEiResponse().getRequestID();
 
-        persistCreatedEvent(oCreatedEvent);
+        persistFromCreatedEvent(oCreatedEvent);
         createNewEm();
         entityManager.persist(oCreatedEvent);
         entityManager.getTransaction().commit();
         
         EiResponse eiResponse = new EiResponse()        
-            //.withRequestID(oCreatedEvent.getEiCreatedEvent().getEiResponse().getRequestID())
             //TODO Need to handle non 200 responses
             .withResponseCode("200")
             .withResponseDescription("Optional description!"); 
@@ -82,32 +84,29 @@ public class EiEventService{
         if(oRequestEvent.getEiRequestEvent().getRequestID() != null){
             eiResponse.setRequestID(oRequestEvent.getEiRequestEvent().getRequestID());
         }
-        //TODO Need to handle non 200 responses
-        eiResponse.setResponseCode("200");
         
+        //TODO Need to handle non 200 responses
+        eiResponse.setResponseCode("200");        
         createNewEm();
         entityManager.persist(oRequestEvent);  
-        entityManager.getTransaction().commit();
-        
-        persistRequestEvent(oRequestEvent);    
+        entityManager.getTransaction().commit();        
+        persistFromRequestEvent(oRequestEvent);    
         OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
-        //Need to find out how to get EiEvent(s) and add them to this Distribute Event
-        //Possibly from the Market Context, but need XPath to access, or find through VEN and Customers        
-
-        String eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
-            .setParameter("ven", oRequestEvent.getEiRequestEvent().getVenID())
-            .getSingleResult();
         
-        EiEvent event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
-                "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
-                .setParameter("id", eventId)
-                .getResultList();
+        String eventId = null;
+        EiEvent event = null;
         
-        //Get the EiEvent and add it to the response.withOadrEvent(EiEvent from query where Event has market context == o.marketContext);
-        
+        try{
+            eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
+                .setParameter("ven", oRequestEvent.getEiRequestEvent().getVenID())
+                .getSingleResult();        
+            event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
+                    "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
+                    .setParameter("id", eventId)
+                    .getSingleResult();                
+        }catch(NoResultException e){};
         response.withOadrEvent(new OadrEvent().withEiEvent(event));
         response.withRequestID(eiResponse.getRequestID());
-
         return play.mvc.Action.ok(marshalObject(response));
     }
     
@@ -122,20 +121,29 @@ public class EiEventService{
         
     @SuppressWarnings("unchecked")
     @Transactional
-    public static void persistRequestEvent(OadrRequestEvent requestEvent){
-        VENStatus venStatus = new VENStatus();
+    public static void persistFromRequestEvent(OadrRequestEvent requestEvent){
+        VENStatus venStatus = null;
+        try{
+            venStatus = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+                    "status WHERE status.venID = :ven")
+                    .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
+                    .getSingleResult();
+        }catch(NoResultException e){};
+        if(venStatus == null){
+            venStatus = new VENStatus();
+        }
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
         
         CustomerForm customer = null;
         EiEvent event = null;
         createNewEm();
-        //Change this to throw an exception then catch it and return a 500/400 error
-        try{
+        
+        //TODO Change this to throw an exception then catch it and return a 500/400 error
         customer = (CustomerForm)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
-                .getSingleResult();       
-        }catch(NoResultException e){}
+                .getSingleResult();
+        
         List<VENStatus> statuses = entityManager.createQuery("SELECT v FROM StatusObject v WHERE v.venID = :ven")
             .setParameter("ven", customer.getVenID())
             .getResultList();
@@ -150,21 +158,23 @@ public class EiEventService{
                     
             if(customer != null && event != null){  
                 venStatus.setEventID(event.getEventDescriptor().getEventID());
-                venStatus.setOptStatus("Pending 1");
+                venStatus.setOptStatus("Pending 2");
                 createNewEm();
-                entityManager.persist(venStatus);
+                entityManager.merge(venStatus);
                 entityManager.getTransaction().commit();
             }
         }
     }
 
     @Transactional
-    public static void persistCreatedEvent(OadrCreatedEvent createdEvent){
-        VENStatus status = null;
-        status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
-                "status WHERE status.venID = :ven")
-                .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
-                .getSingleResult();
+    public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
+        VENStatus status = null;        
+        try{
+            status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+                    "status WHERE status.venID = :ven")
+                    .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
+                    .getSingleResult();
+        }catch(NoResultException e){};
         if(status != null){
             status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
             status.setTime(new Date());
@@ -173,7 +183,23 @@ public class EiEventService{
             entityManager.getTransaction().commit();
         }
     }
-    //
+    
+    public static void persistFromEiEvent(EiEvent eiEvent){        
+        VENStatus status = null;
+        try{
+            status = (VENStatus)Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("SELECT status FROM StatusObject " +
+                    "status WHERE status.venID = :ven")
+                    .setParameter("ven", eiEvent.getEventDescriptor().getEventID())
+                    .getSingleResult();
+        }catch(NoResultException e){};
+        if(status == null){
+            status = new VENStatus();
+            status.setTime(new Date());
+            createNewEm();
+            entityManager.merge(status);
+        }
+    }
+    
     public static Object unmarshalRequest(byte[] chars) throws JAXBException{    
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();

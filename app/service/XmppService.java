@@ -98,7 +98,7 @@ public class XmppService {
                 if(packetObject instanceof OadrRequestEvent || packetObject instanceof OadrCreatedEvent){
                     if(packetObject instanceof OadrRequestEvent){
                         OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
-                        EiEventService.persistRequestEvent(requestEvent);
+                        EiEventService.persistFromRequestEvent(requestEvent);
                         try {
                             sendXMPPDistribute(requestEvent);
                         } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPDistribute");
@@ -106,7 +106,7 @@ public class XmppService {
                     }
                     else if(packetObject instanceof OadrCreatedEvent){
                         OadrCreatedEvent createdEvent = (OadrCreatedEvent)packetObject;
-                        EiEventService.persistCreatedEvent(createdEvent);
+                        EiEventService.persistFromCreatedEvent(createdEvent);
                         try {
                             sendXMPPResponse(createdEvent);
                         } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPResponse");
@@ -218,33 +218,6 @@ public class XmppService {
             iq.setType(IQ.Type.SET);
             vtnConnection.sendPacket(iq); //throws a null pointer exception, check if vtn is connected or not kthxbai            
         }        
-        
-        /* 
-         * WHEN THIS IS UNCOMMENTED RECEIVE ERROR
-         * Exception in thread "Smack Packet Writer (0)" java.lang.NullPointerException
-            at com.sun.xml.bind.v2.runtime.Coordinator.popCoordinator(Coordinator.java:158)
-            at com.sun.xml.bind.v2.runtime.XMLSerializer.close(XMLSerializer.java:856)
-            at com.sun.xml.bind.v2.runtime.MarshallerImpl.write(MarshallerImpl.java:324)
-            at com.sun.xml.bind.v2.runtime.MarshallerImpl.marshal(MarshallerImpl.java:244)
-            at javax.xml.bind.helpers.AbstractMarshallerImpl.marshal(AbstractMarshallerImpl.java:96)
-            at test.OADR2PacketExtension.toXML(OADR2PacketExtension.java:55)
-            at test.OADR2IQ.getChildElementXML(OADR2IQ.java:18)
-            at org.jivesoftware.smack.packet.IQ.toXML(IQ.java:88)
-            at org.jivesoftware.smack.PacketWriter.writePackets(PacketWriter.java:192)
-            at org.jivesoftware.smack.PacketWriter.access$000(PacketWriter.java:40)
-            at org.jivesoftware.smack.PacketWriter$1.run(PacketWriter.java:76)
-            */
-        
-        /*
-        StringWriter out = new StringWriter();
-        OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvent(new OadrEvent().withEiEvent(e))
-            .withVtnID(vtnConnection.getUser());
-        marshaller.marshal(distribute, out);
-        Logger.info(out.toString());
-        */
-        
-        
     }
     
 }
