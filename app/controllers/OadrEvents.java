@@ -54,13 +54,6 @@ public class OadrEvents extends Controller{
 		return ok(views.html.responseTable.render(listStatusObjects, program));
 	}
 	
-	
-	@Transactional
-	public static Result sendXMPPRequest(String event) {
-	    xmppService.testRequest();
-	    return redirect(routes.OadrEvents.requests(event));
-	}
-	
     @Transactional
 	public static Result sendXMPPCreated(String event){
         return redirect(routes.OadrEvents.requests(event));

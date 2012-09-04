@@ -1,10 +1,10 @@
-@(customerList: List[CustomerForm])
+@(customerList: List[VTN])
 
 @import helper._
 
 @import helper.twitterBootstrap._
 
-@main(Html("Customers"), "Customers") {
+@main(Html("VTNs"), "Customers") {
 
 		@if(flash.containsKey("success")) {
 		        <div class="alert-message success">
@@ -21,7 +21,7 @@
             <thead>
                 <tr>      
                 	<th>Customer Name</th>
-                	<th>VEN ID</th>
+                	<th>VTN ID</th>
                 	<th>Client URI</th>
                 	<th>Program Name</th>
                 </tr>

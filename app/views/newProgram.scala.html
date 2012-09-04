@@ -1,4 +1,4 @@
-@(programForm: Form[ProgramForm])
+@(Program: Form[Program])
 
 @import helper._
 
@@ -10,8 +10,8 @@
         <fieldset>
 		    <!-- will eventually generate this ID -->
 		    <h3>Market Context</h3>    
-				@inputText(programForm("programName"), '_label -> "Program Name")
-				@inputText(programForm("programURI"), '_label -> "URI")
+				@inputText(Program("programName"), '_label -> "Program Name")
+				@inputText(Program("programURI"), '_label -> "URI")
 		</fieldset>
 		
         <div class="actions">

@@ -6,12 +6,13 @@ import java.util.List;
 import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
+import protocol.BaseProtocol;
 
 @Entity(name="Customers")
 @Table(name="CUSTOMERS")
 //@Inheritance(strategy = InheritanceType.JOINED)
-public class CustomerForm{
-	
+public class VTN{
+	//
 	public String programName;
 		
 	@Required(message = "Must enter a valid VEN ID")
@@ -28,20 +29,18 @@ public class CustomerForm{
 	@Required(message = "Must enter a Client URI")
 	@Column(name = "CLIENTURI")
 	private String clientURI;
+		
+	@Embedded
+	private BaseProtocol protocol;
 	
     @Id
     @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 		
-	public CustomerForm(){
+	public VTN(){
 		
-	}
-	
-	public CustomerForm(int programId){
-		this.setId(programId);
-		// also need to add setter for the other two fields from find statement
-	}
+	}		
 
 	public String getVenID() {
 		return venID;
@@ -82,6 +81,14 @@ public class CustomerForm{
 
     public void setClientURI(String clientURI) {
         this.clientURI = clientURI;
+    }
+
+    public BaseProtocol getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(BaseProtocol protocol) {
+        this.protocol = protocol;
     }
 
 }

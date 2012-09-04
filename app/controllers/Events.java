@@ -13,9 +13,9 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
-import models.CustomerForm;
-import models.EiEventForm;
-import models.ProgramForm;
+import models.VTN;
+import models.Event;
+import models.Program;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -69,26 +69,26 @@ public class Events extends Controller {
     	      updateStatus(e);
     	  }
     	  
-    	  return ok(views.html.events.render(eiEvents, new EiEventForm()));
+    	  return ok(views.html.events.render(eiEvents, new Event()));
       }
       
     public static Result blankEvent(){
-    	  EiEventForm newForm = new EiEventForm();
-    	  return ok(views.html.createEvent.render(form(EiEventForm.class).fill(newForm), newForm, makeProgramMap()));
+    	  Event newForm = new Event();
+    	  return ok(views.html.newEvent.render(form(Event.class).fill(newForm), newForm, makeProgramMap()));
       }
       
       @Transactional
       //Method to create a new event once on the newEvent page
       public static Result newEvent() throws JAXBException{
-    	  Form<EiEventForm> filledForm = form(EiEventForm.class).bindFromRequest();
+    	  Form<Event> filledForm = form(Event.class).bindFromRequest();
           if(filledForm.hasErrors()) {
         	  addFlashError(filledForm.errors());
-              return badRequest(views.html.createEvent.render(filledForm, new EiEventForm(), makeProgramMap()));
+              return badRequest(views.html.newEvent.render(filledForm, new Event(), makeProgramMap()));
           }
     	  else{		  
-    		  EiEventForm newEventForm = filledForm.get();
+    		  Event newEventForm = filledForm.get();
     		  EiEvent newEvent = newEventForm.toEiEvent();
-    		  String contextName = JPA.em().find(ProgramForm.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
+    		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
     		  JPA.em().persist(newEvent);	  
     		  //Here need to persist the entities for the Pending 1 state!
@@ -114,11 +114,11 @@ public class Events extends Controller {
       
       @Transactional
       public static Result updateEvent(Long id){
-    	  Form<EiEventForm> eventForm = form(EiEventForm.class).bindFromRequest();
+    	  Form<Event> eventForm = form(Event.class).bindFromRequest();
           if(eventForm.hasErrors()) {
-              return badRequest(views.html.editEvent.render(id, eventForm, new EiEventForm(), makeProgramMap()));
+              return badRequest(views.html.editEvent.render(id, eventForm, new Event(), makeProgramMap()));
           }
-          EiEventForm eiEventForm= eventForm.get();
+          Event eiEventForm= eventForm.get();
           eiEventForm.copyEvent(JPA.em().find(EiEvent.class, id));
           EiEvent event = JPA.em().find(EiEvent.class, id); //is actually used, eclipse is a liar
           event = eiEventForm.getEiEvent();
@@ -129,9 +129,9 @@ public class Events extends Controller {
       
       @Transactional
       public static Result editEvent(Long id){
-    	  EiEventForm form = new EiEventForm(JPA.em().find(EiEvent.class, id));
+    	  Event form = new Event(JPA.em().find(EiEvent.class, id));
     	  //form.marketContext = getRelationFromEvent(id).getProgramId() + "";
-    	  return ok(views.html.editEvent.render(id, form(EiEventForm.class).fill(form), form, makeProgramMap()));
+    	  return ok(views.html.editEvent.render(id, form(Event.class).fill(form), form, makeProgramMap()));
       }
     
       //Takes the error Map with a string as a key and adds
@@ -149,7 +149,7 @@ public class Events extends Controller {
       public static void updateStatus(EiEvent event){
           DateTime currentTime = new DateTime();
           DateTime startTime = new DateTime(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
-          long endMillis = currentTime.getMillis() + EiEventForm.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration());
+          long endMillis = currentTime.getMillis() + Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration());
           if(currentTime.getMillis() < startTime.getMillis()){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
           }
@@ -167,10 +167,10 @@ public class Events extends Controller {
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
-          List<CustomerForm> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
+          List<VTN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
                   .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                   .getResultList();
-          for(CustomerForm c : customers){
+          for(VTN c : customers){
               VENStatus v = new VENStatus();
               v.setOptStatus("Pending 1");
               //TODO Need to make the Request ID a UNIQUE Alpha Numeric string! Ask Brian/Thom if that is correct
@@ -188,9 +188,9 @@ public class Events extends Controller {
       @Transactional
       public static Map<String, String> makeProgramMap(){
           //JPA.em() doesn't work...
-          List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
+          List<Program> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
           Map<String, String> programMap = new HashMap<String, String>();
-    	  for(ProgramForm program : programList){
+    	  for(Program program : programList){
     		  programMap.put(program.getId() + "", program.getProgramName());
     	  }
     	  return programMap;

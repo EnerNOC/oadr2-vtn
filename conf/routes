@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET	/						controllers.Events.index()
+GET	/						controllers.Programs.index()
 
 # Test
 #GET /test					controllers.OadrEvents.index()
@@ -43,8 +43,8 @@ POST /requests/display		controllers.OadrEvents.renderAjaxTable(program:String)
 POST    /requests/:id/delete       controllers.OadrEvents.deleteRequest(program:String, id:Long)
 
 # XMPP Test
-GET /test/request				controllers.OadrEvents.sendXMPPRequest(event:String)
-GET /test/created				controllers.OadrEvents.sendXMPPCreated(event:String)
+# GET /test/request				controllers.OadrEvents.sendXMPPRequest(event:String)
+# GET /test/created				controllers.OadrEvents.sendXMPPCreated(event:String)
 
 # Customer List
 GET /customers					controllers.Customers.customers()

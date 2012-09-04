@@ -1,14 +1,12 @@
 package models;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlAttribute;
-
 import play.data.validation.Constraints.Required;
 
 @Entity(name="Program")
 @Table(name="PROJECT")
 //@Inheritance(strategy = InheritanceType.JOINED)
-public class ProgramForm{
+public class Program{
 	
 	@Required(message = "Must entre a valid Program Name")
 	private String programName;
@@ -17,11 +15,11 @@ public class ProgramForm{
 
 	@Id private long id;
 	
-	public ProgramForm(){
+	public Program(){
 		
 	}
 	
-	public ProgramForm(int programId){
+	public Program(int programId){
 		this.setId(programId);
 		// also need to add setter for the other two fields from find statement
 	}

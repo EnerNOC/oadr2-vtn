@@ -21,7 +21,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 
-import models.CustomerForm;
+import models.VTN;
 
 import org.enernoc.open.oadr2.model.EiCreatedEvent;
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -53,7 +53,6 @@ public class XmppService {
     private ConnectionConfiguration connConfig = new ConnectionConfiguration("msawant-mbp.local", 5222);
     
     private static XMPPConnection vtnConnection;
-    private XMPPConnection testConnection;
             
     //TODO add these to a config file like spring config or something, hardcoded for now
     private String vtnUsername = "xmpp-vtn";
@@ -126,13 +125,6 @@ public class XmppService {
         };
     }
     
-    public void testRequest(){
-        OadrRequestEvent ore = new OadrRequestEvent().withEiRequestEvent(new EiRequestEvent().withVenID("test-customer-one").withRequestID("8675309").withReplyLimit((long) 12));
-        IQ packet = new OADR2IQ(new OADR2PacketExtension(ore, marshaller));
-        packet.setTo("xmpp-vtn@msawant-mbp.local/vtn");
-        testConnection.sendPacket(packet);
-    }
-    
     public XMPPConnection connect(String username, String password, String resource) throws InstantiationException, IllegalAccessException, XMPPException{
        XMPPConnection connection = new XMPPConnection(connConfig);
        if(!connection.isConnected()){
@@ -200,11 +192,11 @@ public class XmppService {
     public static void sendEventOnCreate(EiEvent e) throws JAXBException{
         createNewEm();
         
-        List<CustomerForm> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
+        List<VTN> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
                 .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                 .getResultList();
         
-        for(CustomerForm customer: customers){
+        for(VTN customer: customers){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
             .withOadrEvent(new OadrEvent().withEiEvent(e))
             .withVtnID(vtnConnection.getUser());

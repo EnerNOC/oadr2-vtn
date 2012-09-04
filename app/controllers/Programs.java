@@ -7,7 +7,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
-import models.ProgramForm;
+import models.Program;
 import play.data.Form;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
@@ -27,10 +27,10 @@ public class Programs extends Controller {
 @SuppressWarnings("unchecked")
 @Transactional
 public static Result programs(){
-	  List<ProgramForm> programs = JPA.em().createQuery("FROM Program").getResultList();
+	  List<Program> programs = JPA.em().createQuery("FROM Program").getResultList();
 	  
-	  class ProgramFormComparator implements Comparator<ProgramForm>{
-			public int compare(ProgramForm programOne, ProgramForm programTwo){
+	  class ProgramFormComparator implements Comparator<Program>{
+			public int compare(Program programOne, Program programTwo){
 				return programOne.getProgramName().compareTo(programTwo.getProgramName());
 			}
 	  }
@@ -40,18 +40,18 @@ public static Result programs(){
   }
   
   public static Result blankProgram(){
-	  return ok(views.html.newProgram.render(form(ProgramForm.class)));
+	  return ok(views.html.newProgram.render(form(Program.class)));
   }
   
   @Transactional
   public static Result newProgram(){
-	  Form<ProgramForm> filledForm = form(ProgramForm.class).bindFromRequest();
+	  Form<Program> filledForm = form(Program.class).bindFromRequest();
 	  if(filledForm.hasErrors()){
 		  //do some error handling
 		  return badRequest();
 	  }
 	  else{
-		  ProgramForm newProgram = filledForm.get();
+		  Program newProgram = filledForm.get();
 		  JPA.em().persist(newProgram);
 		  flash("success", "Program as been created");
 	  }
@@ -62,7 +62,7 @@ public static Result programs(){
   
   @Transactional
   public static Result deleteProgram(Long id){
-	  ProgramForm program = JPA.em().find(ProgramForm.class, id);
+	  Program program = JPA.em().find(Program.class, id);
 	  flash("success", "Program has been deleted");
 	  JPA.em().remove(program);
 	  return redirect(routes.Programs.programs());

@@ -8,8 +8,8 @@ import java.util.Collections;
 
 import javax.persistence.Persistence;
 
-import models.ProgramForm;
-import models.CustomerForm;
+import models.Program;
+import models.VTN;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -28,10 +28,10 @@ public class Customers extends Controller {
 	@SuppressWarnings("unchecked")
 	@Transactional
 	public static Result customers(){
-		  List<CustomerForm> customers = JPA.em().createQuery("FROM Customers").getResultList();
+		  List<VTN> customers = JPA.em().createQuery("FROM Customers").getResultList();
 		  		  
-		  class CustomerFormComparator implements Comparator<CustomerForm>{
-				public int compare(CustomerForm userOne, CustomerForm userTwo){
+		  class CustomerFormComparator implements Comparator<VTN>{
+				public int compare(VTN userOne, VTN userTwo){
 					return userOne.getVenID().compareTo(userTwo.getVenID());
 				}
 			}
@@ -41,19 +41,19 @@ public class Customers extends Controller {
 	}
 	
 	public static Result blankCustomer(){
-		return ok(views.html.newCustomer.render(form(CustomerForm.class), makeProgramMap()));
+		return ok(views.html.newCustomer.render(form(VTN.class), makeProgramMap()));
 	}
 	
 	@Transactional
 	public static Result newCustomer(){
-		  Form<CustomerForm> filledForm = form(CustomerForm.class).bindFromRequest();
+		  Form<VTN> filledForm = form(VTN.class).bindFromRequest();
 		  if(filledForm.hasErrors()){
 	    	  addFlashError(filledForm.errors());
 			  return badRequest(views.html.newCustomer.render(filledForm, makeProgramMap()));
 		  }
 		  else{
-			  CustomerForm newCustomer = filledForm.get();
-			  newCustomer.setProgramId(JPA.em().find(ProgramForm.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
+			  VTN newCustomer = filledForm.get();
+			  newCustomer.setProgramId(JPA.em().find(Program.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
 			  JPA.em().persist(newCustomer);
 			  flash("success", "Customer as been created");
 		  }
@@ -65,10 +65,10 @@ public class Customers extends Controller {
 	@SuppressWarnings("unchecked")
     public static Map<String, String> makeProgramMap(){
 	    //What the f this works but JPA.em() doesn't? ya okay sweet bro
-	    List<ProgramForm> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
-		//List<ProgramForm> programList = JPA.em().createQuery("FROM Program").getResultList();
+	    List<Program> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
+		//List<Program> programList = JPA.em().createQuery("FROM Program").getResultList();
 		Map<String, String> programMap = new HashMap<String, String>();
-		for(ProgramForm program : programList){
+		for(Program program : programList){
 			programMap.put(program.getId() + "", program.getProgramName());
 		}
 		
@@ -77,7 +77,7 @@ public class Customers extends Controller {
 	
 	  @Transactional
 	  public static Result deleteCustomer(Long id){
-		  JPA.em().remove(JPA.em().find(CustomerForm.class, id));
+		  JPA.em().remove(JPA.em().find(VTN.class, id));
 	      flash("success", "Customer has been deleted");
 	      return redirect(routes.Customers.customers());
 	  }

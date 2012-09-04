@@ -17,9 +17,9 @@
         <div class="topbar">
             <div class="fill">
                 <div class="container">
-                    <a class="brand" href="@routes.Events.events()">Events</a>
                     <a class="brand" href="@routes.Programs.programs()">Programs</a>
-                    <a class="brand" href="@routes.Customers.customers()">Customers</a>
+                    <a class="brand" href="@routes.Customers.customers()">VTNs</a>
+                    <a class="brand" href="@routes.Events.events()">Events</a>
                 </div>
             </div>
         </div>
@@ -35,7 +35,7 @@
                     	<a href=@routes.Programs.blankProgram() id="add" class="btn success")>Create Program</a>
                     }
                     @if(nav == "Customers"){
-                    	<a href=@routes.Customers.blankCustomer() id="add" class="btn success")>Create Customer</a>
+                    	<a href=@routes.Customers.blankCustomer() id="add" class="btn success")>Create VTN</a>
                     }
                     @if(nav == "OadrEvents"){
                     	<a id="requestbutton" class="btn">Refresh</a>

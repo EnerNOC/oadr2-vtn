@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +15,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.enernoc.open.oadr2.model.DurationPropType;
 import org.enernoc.open.oadr2.model.EiEvent;
-import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
@@ -29,7 +27,6 @@ import org.enernoc.open.oadr2.model.Properties.Dtstart;
 
 import org.joda.time.*;
 
-import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
 
@@ -48,7 +45,7 @@ import play.data.validation.Constraints.Required;
 //Other method for adding custom validation by creating your own notations
 //http://stackoverflow.com/questions/8115106/how-to-create-a-custom-validator-in-play-framework-2-0
 
-public class EiEventForm{
+public class Event{
 	
 	@Required(message = "Must enter an Event ID")
 	public String eventID;
@@ -80,7 +77,7 @@ public class EiEventForm{
 	private EiEvent eiEvent;
 	
 	//constructor for the blank form
-	public EiEventForm(){
+	public Event(){
 		DateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy");
 		Date date = new Date();
 		startDate = dateFormat.format(date);
@@ -89,7 +86,7 @@ public class EiEventForm{
 	}
 	
 	//constructor for the edit form 
-	public EiEventForm(EiEvent e){
+	public Event(EiEvent e){
 		createStatusTypes();
 		eiEvent = e;
 		this.eventID = e.getEventDescriptor().getEventID();

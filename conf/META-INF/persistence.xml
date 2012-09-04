@@ -7,8 +7,9 @@
 		<provider>org.hibernate.ejb.HibernatePersistence</provider>
 		<jar-file>lib/oadr2-model-0.1-SNAPSHOT-jar-with-dependencies.jar</jar-file>
 		<class>org.enernoc.open.oadr2.model.EiEvent</class>
-		<class>models.ProgramForm</class>
-		<class>models.CustomerForm</class>
+		<class>models.Program</class>
+		<class>models.VTN</class>
+		<class>protocol.BaseProtocol</class>
     	<properties>
            	<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
            	<property name="hibernate.hbm2ddl.auto" value="update"/>
