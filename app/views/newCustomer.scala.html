@@ -1,4 +1,4 @@
-@(userForm: Form[VTN], programs: Map[String, String])
+@(userForm: Form[VEN], programs: Map[String, String])
 
 @import helper._
 
@@ -8,7 +8,7 @@
 
 }
 
-@main(Html("Create a VTN"), "") {
+@main(Html("Create a VEN"), "") {
 	
 	@if(flash.size() > 0){
        <div class="alert-message error">
@@ -30,7 +30,7 @@
 	                '_showConstraints -> false
 	            )
 		    	@inputText(userForm("customerName"), '_label -> "Customer Name")
-				@inputText(userForm("venID"), '_label -> "VTN ID")
+				@inputText(userForm("venID"), '_label -> "VEN ID")
 				@inputText(userForm("clientURI"), '_label -> "Client URI")
 	            <div class="actions">
 	            	<input type="submit" value="Create this customer" class="btn primary"> or 

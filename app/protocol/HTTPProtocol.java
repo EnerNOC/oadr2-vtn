@@ -6,7 +6,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 
-import models.VTN;
+import models.VEN;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -17,7 +17,10 @@ import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 
 import play.Logger;
+//http://www.yelp.com/biz/cambridge-family-ymca-cambridge
 
+//TODO Need to find out if whether or not "send" for HTTP is appropriate, since a POST using CURL won't return a response
+//doing it this way, perhaps look at the response() 
 public class HTTPProtocol extends BaseProtocol{
     
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
@@ -28,7 +31,7 @@ public class HTTPProtocol extends BaseProtocol{
     }
 
     @Override
-    public void send(VTN vtn, OadrResponse oadrResponse) {
+    public void send(VEN vtn, OadrResponse oadrResponse) {
         VENStatus status = null;
         createNewEm();
         try{
@@ -48,12 +51,12 @@ public class HTTPProtocol extends BaseProtocol{
     }
 
     @Override
-    public void send(VTN vtn, OadrDistributeEvent oadrDistributeEvent) {
-        //Shouldn't ever receive a DistributeEvent, might not need this method        
+    public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent) {
+        //Shouldn't ever receive a DistributeEvent, might not need this method
     }
 
     @Override
-    public void send(VTN vtn, OadrCreatedEvent oadrCreatedEvent) {
+    public void send(VEN vtn, OadrCreatedEvent oadrCreatedEvent) {
         createNewEm();
         VENStatus status = null;        
         try{
@@ -73,7 +76,7 @@ public class HTTPProtocol extends BaseProtocol{
 
     @SuppressWarnings("unchecked")
     @Override
-    public void send(VTN vtn, OadrRequestEvent oadrRequestEvent){
+    public void send(VEN vtn, OadrRequestEvent oadrRequestEvent){
         EiResponse eiResponse = new EiResponse(); 
         
         if(oadrRequestEvent.getEiRequestEvent().getRequestID() != null){
@@ -96,12 +99,12 @@ public class HTTPProtocol extends BaseProtocol{
         
         venStatus.setTime(new Date());
         venStatus.setVenID(oadrRequestEvent.getEiRequestEvent().getVenID());        
-        VTN customer = null;
+        VEN customer = null;
         EiEvent event = null;
         createNewEm();
         
         //TODO Change this to throw an exception then catch it and return a 500/400 error
-        customer = (VTN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
+        customer = (VEN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();
         
@@ -129,7 +132,7 @@ public class HTTPProtocol extends BaseProtocol{
     }
 
     @Override
-    public void send(VTN vtn, EiEvent eiEvent) {        
+    public void send(VEN vtn, EiEvent eiEvent) {        
         VENStatus status = null;
         createNewEm();
         try{

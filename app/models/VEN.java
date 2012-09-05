@@ -11,8 +11,8 @@ import protocol.BaseProtocol;
 @Entity(name="Customers")
 @Table(name="CUSTOMERS")
 //@Inheritance(strategy = InheritanceType.JOINED)
-public class VTN{
-	//
+public class VEN{
+	
 	public String programName;
 		
 	@Required(message = "Must enter a valid VEN ID")
@@ -26,7 +26,6 @@ public class VTN{
 	@Column(name = "CUSTOMERNAME")
 	private String customerName;
 	
-	@Required(message = "Must enter a Client URI")
 	@Column(name = "CLIENTURI")
 	private String clientURI;
 		
@@ -38,7 +37,7 @@ public class VTN{
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 		
-	public VTN(){
+	public VEN(){
 		
 	}		
 

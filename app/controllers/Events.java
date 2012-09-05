@@ -13,7 +13,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
-import models.VTN;
+import models.VEN;
 import models.Event;
 import models.Program;
 import models.VENStatus;
@@ -98,7 +98,7 @@ public class Events extends Controller {
 
     		  populateFromPush(newEvent);
     		  
-    		  XmppService.sendEventOnCreate(newEvent);
+    		  XmppService.populateThreadPool(newEvent);
     		  return redirect(routes.Events.newEvent());		  
     	  }
       }
@@ -167,16 +167,15 @@ public class Events extends Controller {
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
-          List<VTN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
+          List<VEN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
                   .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                   .getResultList();
-          for(VTN c : customers){
+          for(VEN c : customers){
               VENStatus v = new VENStatus();
               v.setOptStatus("Pending 1");
               //TODO Need to make the Request ID a UNIQUE Alpha Numeric string! Ask Brian/Thom if that is correct
               v.setRequestID(e.getEventDescriptor().getEventID());
               v.setEventID(e.getEventDescriptor().getEventID());
-              Logger.info("Program is: " + c.getProgramId());
               v.setProgram(c.getProgramId());
               v.setVenID(c.getVenID());
               v.setTime(new Date());

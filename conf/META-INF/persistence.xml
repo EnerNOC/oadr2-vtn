@@ -8,7 +8,7 @@
 		<jar-file>lib/oadr2-model-0.1-SNAPSHOT-jar-with-dependencies.jar</jar-file>
 		<class>org.enernoc.open.oadr2.model.EiEvent</class>
 		<class>models.Program</class>
-		<class>models.VTN</class>
+		<class>models.VEN</class>
 		<class>protocol.BaseProtocol</class>
     	<properties>
            	<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>

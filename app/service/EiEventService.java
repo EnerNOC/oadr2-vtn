@@ -17,7 +17,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.inject.Inject;
 
-import models.VTN;
+import models.VEN;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -139,12 +139,12 @@ public class EiEventService{
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
         
-        VTN customer = null;
+        VEN customer = null;
         EiEvent event = null;
         createNewEm();
         
         //TODO Change this to throw an exception then catch it and return a 500/400 error
-        customer = (VTN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
+        customer = (VEN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();
                   

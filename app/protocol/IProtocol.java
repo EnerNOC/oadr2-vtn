@@ -8,17 +8,17 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 
-import models.VTN;
+import models.VEN;
 
 @Embeddable
 public interface IProtocol {
     
     public enum ProtocolType{ XMPP, HTTP }
     
-    public void send(VTN vtn, OadrResponse oadrResponse);
-    public void send(VTN vtn, EiEvent eiEvent);
-    public void send(VTN vtn, OadrDistributeEvent oadrDistributeEvent);
-    public void send(VTN vtn, OadrCreatedEvent oadrCreatedEvent);
-    public void send(VTN vtn, OadrRequestEvent oadrRequestEvent);
+    public void send(VEN vtn, OadrResponse oadrResponse);
+    public void send(VEN vtn, EiEvent eiEvent);
+    public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent);
+    public void send(VEN vtn, OadrCreatedEvent oadrCreatedEvent);
+    public void send(VEN vtn, OadrRequestEvent oadrRequestEvent);
 
 }

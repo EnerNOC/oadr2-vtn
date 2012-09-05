@@ -7,7 +7,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
-import models.VTN;
+import models.VEN;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
@@ -39,20 +39,20 @@ public class XMPPProtocol extends BaseProtocol{
     }
 
     @Override
-    public void send(VTN vtn, OadrResponse oadrResponse) {
+    public void send(VEN vtn, OadrResponse oadrResponse) {
         
     }
     
     @SuppressWarnings("unchecked")
     @Override
-    public void send(VTN vtn, EiEvent eiEvent){
+    public void send(VEN vtn, EiEvent eiEvent){
         createNewEm();
         
-        List<VTN> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
+        List<VEN> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
                 .setParameter("uri", eiEvent.getEventDescriptor().getEiMarketContext().getMarketContext())
                 .getResultList();
         
-        for(VTN customer: customers){
+        for(VEN customer: customers){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
             .withOadrEvent(new OadrEvent().withEiEvent(eiEvent))
             .withVtnID(connection.getUser());
@@ -71,7 +71,7 @@ public class XMPPProtocol extends BaseProtocol{
     }
     
     @Override
-    public void send(VTN vtn, OadrDistributeEvent oadrDistributeEvent) {
+    public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent) {
         try {
             service.connect();
         } catch (XMPPException e) {
@@ -81,11 +81,11 @@ public class XMPPProtocol extends BaseProtocol{
     }
 
     @Override
-    public void send(VTN vtn, OadrCreatedEvent oadrCreatedEvent) {
+    public void send(VEN vtn, OadrCreatedEvent oadrCreatedEvent) {
     }
 
     @Override
-    public void send(VTN vtn, OadrRequestEvent oadrRequestEvent) {
+    public void send(VEN vtn, OadrRequestEvent oadrRequestEvent) {
         
     }
     

@@ -9,7 +9,7 @@ import java.util.Collections;
 import javax.persistence.Persistence;
 
 import models.Program;
-import models.VTN;
+import models.VEN;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -28,10 +28,10 @@ public class Customers extends Controller {
 	@SuppressWarnings("unchecked")
 	@Transactional
 	public static Result customers(){
-		  List<VTN> customers = JPA.em().createQuery("FROM Customers").getResultList();
+		  List<VEN> customers = JPA.em().createQuery("FROM Customers").getResultList();
 		  		  
-		  class CustomerFormComparator implements Comparator<VTN>{
-				public int compare(VTN userOne, VTN userTwo){
+		  class CustomerFormComparator implements Comparator<VEN>{
+				public int compare(VEN userOne, VEN userTwo){
 					return userOne.getVenID().compareTo(userTwo.getVenID());
 				}
 			}
@@ -41,18 +41,18 @@ public class Customers extends Controller {
 	}
 	
 	public static Result blankCustomer(){
-		return ok(views.html.newCustomer.render(form(VTN.class), makeProgramMap()));
+		return ok(views.html.newCustomer.render(form(VEN.class), makeProgramMap()));
 	}
 	
 	@Transactional
 	public static Result newCustomer(){
-		  Form<VTN> filledForm = form(VTN.class).bindFromRequest();
+		  Form<VEN> filledForm = form(VEN.class).bindFromRequest();
 		  if(filledForm.hasErrors()){
 	    	  addFlashError(filledForm.errors());
 			  return badRequest(views.html.newCustomer.render(filledForm, makeProgramMap()));
 		  }
 		  else{
-			  VTN newCustomer = filledForm.get();
+			  VEN newCustomer = filledForm.get();
 			  newCustomer.setProgramId(JPA.em().find(Program.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
 			  JPA.em().persist(newCustomer);
 			  flash("success", "Customer as been created");
@@ -77,7 +77,7 @@ public class Customers extends Controller {
 	
 	  @Transactional
 	  public static Result deleteCustomer(Long id){
-		  JPA.em().remove(JPA.em().find(VTN.class, id));
+		  JPA.em().remove(JPA.em().find(VEN.class, id));
 	      flash("success", "Customer has been deleted");
 	      return redirect(routes.Customers.customers());
 	  }

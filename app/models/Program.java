@@ -8,7 +8,7 @@ import play.data.validation.Constraints.Required;
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class Program{
 	
-	@Required(message = "Must entre a valid Program Name")
+	@Required(message = "Must enter a valid Program Name")
 	private String programName;
 	@Required(message = "Must enter a valid Program URI")
 	private String programURI;
