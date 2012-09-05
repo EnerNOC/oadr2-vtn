@@ -254,8 +254,8 @@ public class XmppService {
                 .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                 .getResultList();
         
-        //Logger.info("customers: " + customers.size());
-        
+        Logger.info("customers: " + customers.size());
+        //for(VEN c : customers){
         for(int i = 0; i < customers.size(); i++){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
             .withOadrEvent(new OadrEvent().withEiEvent(e))

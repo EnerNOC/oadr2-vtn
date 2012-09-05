@@ -132,7 +132,7 @@ public class EiEventService{
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                     .getSingleResult();
-        }catch(NoResultException e){Logger.info("Exception!");};
+        }catch(NoResultException e){Logger.warn("NoResultException in persistFromRequestEvent");};
         if(venStatus == null){
             venStatus = new VENStatus();
         }
@@ -183,7 +183,9 @@ public class EiEventService{
         }
     }
     
-    public static void persistFromEiEvent(EiEvent eiEvent){        
+    /*
+    public static void persistFromEiEvent(EiEvent eiEvent){   
+        Logger.info("Persisting from EiEvent");
         VENStatus status = null;
         createNewEm();
         try{
@@ -200,6 +202,7 @@ public class EiEventService{
             entityManager.getTransaction().commit();
         }
     }
+    */
     
     public static void persistFromResponse(OadrResponse response){
         VENStatus status = null;

@@ -92,7 +92,7 @@ public class Events extends Controller {
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
     		  JPA.em().persist(newEvent);	  
     		  //Here need to persist the entities for the Pending 1 state!
-    		  EiEventService.persistFromEiEvent(newEvent);
+    		  //EiEventService.persistFromEiEvent(newEvent);
     		  
     		  flash("success", "Event as been created");
 
@@ -167,7 +167,7 @@ public class Events extends Controller {
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
-          List<VEN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program")
+          List<VEN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program and c.clientURI != ''")
                   .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                   .getResultList();
           for(VEN c : customers){
