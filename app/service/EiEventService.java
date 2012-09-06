@@ -173,7 +173,7 @@ public class EiEventService{
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                     .getSingleResult();
-        }catch(NoResultException e){};
+        }catch(Exception e){Logger.warn("Caught exception, either NoResult or NonUnique from persistFromCreatedEvent() in EiEventService");};
         if(status != null){
             status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
             status.setTime(new Date());

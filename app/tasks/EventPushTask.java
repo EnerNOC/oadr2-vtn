@@ -20,7 +20,8 @@ public class EventPushTask implements Runnable{
 
     @Override
     public void run() {
-        Logger.info("Running event for jid: " + jid);
+        Logger.info("Running event for jid: " + jid);        
+        xmppService.sendObjectToJID(distributeEvent, jid);
         
         //TODO Write the method to persist to the database and get the send information ready
         //ex call a send for the JID with the message contained, might need to add the contained message for

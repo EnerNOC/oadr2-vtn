@@ -222,7 +222,7 @@ public class XmppService {
     
     @SuppressWarnings("unchecked")
     @Transactional
-    public static void sendEventOnCreate(EiEvent e, Object test) throws JAXBException{
+    public static void sendEventOnCreate(EiEvent e) throws JAXBException{
         createNewEm();
         
         List<VEN> customers = entityManager.createQuery("SELECT c from Customers c WHERE c.programId = :uri")
@@ -243,6 +243,17 @@ public class XmppService {
             iq.setType(IQ.Type.SET);
             vtnConnection.sendPacket(iq); //throws a null pointer exception, check if vtn is connected or not kthxbai            
         }        
+    }
+    
+    public void sendObjectToJID(Object o, String jid){
+        IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
+        for(PacketExtension p : iq.getExtensions()){
+            Logger.info("Namespace: " + p.getNamespace());
+        }
+        Logger.info("Sending to: " + jid);
+        iq.setTo(jid);
+        iq.setType(IQ.Type.SET);
+        vtnConnection.sendPacket(iq);
     }
     
     @SuppressWarnings("unchecked")
@@ -268,8 +279,9 @@ public class XmppService {
             distribute.getOadrEvent().add(new OadrEvent().withEiEvent(e));
             distribute.setRequestID("Request ID");
             distribute.setVtnID("VTN ID");
-            pushService.provide(new EventPushTask(i + "", distribute));     
-        }        
+            pushService.provide(new EventPushTask(customers.get(i).getClientURI(), distribute));     
+        }
+        pushService.executeTask();
     }
     
 }

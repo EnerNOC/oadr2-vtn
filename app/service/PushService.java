@@ -31,7 +31,7 @@ public class PushService{
         while(queue.size() > 0){
             threadPool.execute(queue.poll());
         }
-        threadPool.shutdown();
+        //threadPool.shutdown();
     }
 
 }
