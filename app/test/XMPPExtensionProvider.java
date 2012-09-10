@@ -33,20 +33,15 @@ public class XMPPExtensionProvider implements PacketExtensionProvider, IQProvide
         catch ( JAXBException ex ) {
             throw new RuntimeException("Error initializing JAXB context",ex);
         }
-//      System.out.println("++++++++++++++++++++ LOADED OADR Packet Extension Provider");
     }
     
     @Override
     public PacketExtension parseExtension(XmlPullParser pullParser) throws Exception {
-        Logger.info("Parsing extension");
-//      System.out.println( "++++++++++++++++++++++++++ Parsing Extension!!!" );
         return new OADR2PacketExtension( unmarshaller.unmarshalSubTree(pullParser), this.jaxb );        
     }
 
     @Override
     public IQ parseIQ(XmlPullParser parser) throws Exception {
-        Logger.info("Parsing iq");
-//      System.out.println( "++++++++++++++++++++++++++ Parsing IQ!!!" );
         return new OADR2IQ( parseExtension(parser) );
     }
 }

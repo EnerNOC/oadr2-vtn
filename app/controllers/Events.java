@@ -1,5 +1,6 @@
 package controllers;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -56,7 +57,6 @@ public class Events extends Controller {
       @SuppressWarnings("unchecked")
       @Transactional
       public static Result events(){
-    
     	  class EiEventComparator implements Comparator<EiEvent>{
     		  public int compare(EiEvent eventOne, EiEvent eventTwo){
     			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem().compareTo(

@@ -30,7 +30,6 @@ public class Dependencies {
     @Provides
     @Singleton
     public PushService makePushService(){
-        Logger.info("In push service");
         return new PushService();
     }
   

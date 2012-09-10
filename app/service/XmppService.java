@@ -1,21 +1,16 @@
 package service;
 
 import java.io.StringWriter;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Random;
 
 import play.Logger;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
-import play.mvc.Result;
 import protocol.XMPPService;
 import tasks.EventPushTask;
 import test.*;
 
 
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -25,19 +20,13 @@ import javax.xml.datatype.DatatypeFactory;
 
 import models.VEN;
 
-import org.enernoc.open.oadr2.model.EiCreatedEvent;
 import org.enernoc.open.oadr2.model.EiEvent;
-import org.enernoc.open.oadr2.model.EiRequestEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
-import org.enernoc.open.oadr2.model.EventResponses;
-import org.enernoc.open.oadr2.model.EventResponses.EventResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
-import org.enernoc.open.oadr2.model.OptTypeType;
-import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -46,7 +35,6 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.packet.Presence;
 
 public class XmppService {
 
@@ -123,6 +111,7 @@ public class XmppService {
             public void processPacket(Packet packet){
                 OADR2PacketExtension extension = (OADR2PacketExtension)packet.getExtension(OADR2_XMLNS);
                 Object packetObject = null;
+                //Logger.info("Packet contains: " + packet.toXML().toString());
                 try {
                     packetObject = EiEventService.unmarshalRequest(extension.toXML().getBytes());
                 } catch (JAXBException e) {}
@@ -130,18 +119,22 @@ public class XmppService {
                     if(packetObject instanceof OadrRequestEvent){
                         OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
                         EiEventService.persistFromRequestEvent(requestEvent);
-                        try {
-                            sendXMPPDistribute(requestEvent);
-                        } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPDistribute");
-                        }
+                            try {
+                                sendXMPPDistribute(requestEvent);
+                            } catch (JAXBException e) {
+                                Logger.warn("Exception thrown from OadrRequestEvent packet listener");
+                                e.printStackTrace();
+                            }
                     }
                     else if(packetObject instanceof OadrCreatedEvent){
                         OadrCreatedEvent createdEvent = (OadrCreatedEvent)packetObject;
                         EiEventService.persistFromCreatedEvent(createdEvent);
-                        try {
-                            sendXMPPResponse(createdEvent);
-                        } catch (JAXBException e) {Logger.info("JAXBException from sendXMPPResponse");
-                        }
+                            try {
+                                sendXMPPResponse(createdEvent);
+                            } catch (JAXBException e) {
+                                Logger.warn("Exception thrown from OadrCreatedEvent packet listener.");
+                                e.printStackTrace();
+                            }
                     }
                 }          
             }
@@ -187,7 +180,7 @@ public class XmppService {
         
         StringWriter out = new StringWriter();
         marshaller.marshal(distributeEvent, out);
-        Logger.info(out.toString());
+        //Logger.info(out.toString());
         
         OADR2IQ iq = new OADR2IQ(new OADR2PacketExtension(distributeEvent, marshaller));
         //TODO Need to find the actual user from the query for who the Customer is, Customer.getJID etc..
@@ -206,6 +199,7 @@ public class XmppService {
         marshaller.marshal(response, out);
         
         IQ iq = new OADR2IQ(new OADR2PacketExtension(response, marshaller));
+        
         //TODO Need to find the actual user from the query for who the Customer is, Customer.getJID etc..
         iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
         iq.setType(IQ.Type.SET);
@@ -234,23 +228,16 @@ public class XmppService {
             .withOadrEvent(new OadrEvent().withEiEvent(e))
             .withVtnID(vtnConnection.getUser());
             IQ iq = new OADR2IQ(new OADR2PacketExtension(distribute, marshaller));
-            for(PacketExtension p : iq.getExtensions()){
-                Logger.info("Namespace: " + p.getNamespace());
-            }
-            Logger.info("Customer Client URI: " + customer.getClientURI());
-            //iq.setTo(customer.getClientURI());
-            iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+            iq.setTo(customer.getClientURI());
             iq.setType(IQ.Type.SET);
-            vtnConnection.sendPacket(iq); //throws a null pointer exception, check if vtn is connected or not kthxbai            
+            vtnConnection.sendPacket(iq); //throws a null pointer exception, check if vtn is connected or not kthxbai  
+            
         }        
     }
     
     public void sendObjectToJID(Object o, String jid){
+        Logger.info("Sending object to - " + jid);
         IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
-        for(PacketExtension p : iq.getExtensions()){
-            Logger.info("Namespace: " + p.getNamespace());
-        }
-        Logger.info("Sending to: " + jid);
         iq.setTo(jid);
         iq.setType(IQ.Type.SET);
         vtnConnection.sendPacket(iq);
@@ -265,14 +252,11 @@ public class XmppService {
                 .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext())
                 .getResultList();
         
-        Logger.info("customers: " + customers.size());
-        //for(VEN c : customers){
         for(int i = 0; i < customers.size(); i++){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
             .withOadrEvent(new OadrEvent().withEiEvent(e))
             .withVtnID(vtnConnection.getUser());
             
-            //TODO pushService.provide(new EventPushTask(customer.getClientURI(), distribute));
             distribute.setEiResponse(new EiResponse().withRequestID("Request ID")
                     .withResponseCode("200")
                     .withResponseDescription("Response Description"));
@@ -281,7 +265,6 @@ public class XmppService {
             distribute.setVtnID("VTN ID");
             pushService.provide(new EventPushTask(customers.get(i).getClientURI(), distribute));     
         }
-        pushService.executeTask();
     }
     
 }

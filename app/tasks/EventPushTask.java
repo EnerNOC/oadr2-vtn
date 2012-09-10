@@ -1,5 +1,7 @@
 package tasks;
 
+import java.util.Random;
+
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 
 import play.Logger;
@@ -20,7 +22,14 @@ public class EventPushTask implements Runnable{
 
     @Override
     public void run() {
-        Logger.info("Running event for jid: " + jid);        
+        //Logger.info("Running event for jid: " + jid + " - " + System.currentTimeMillis());
+        Random r = new Random();
+        try {
+            Thread.sleep(r.nextInt(5000) + 1000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         xmppService.sendObjectToJID(distributeEvent, jid);
         
         //TODO Write the method to persist to the database and get the send information ready
