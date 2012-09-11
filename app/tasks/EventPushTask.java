@@ -25,7 +25,7 @@ public class EventPushTask implements Runnable{
         //Logger.info("Running event for jid: " + jid + " - " + System.currentTimeMillis());
         Random r = new Random();
         try {
-            Thread.sleep(r.nextInt(5000) + 1000);
+            Thread.sleep(r.nextInt(3000) + 1000);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

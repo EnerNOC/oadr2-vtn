@@ -16,8 +16,8 @@ public class PushService{
     
     public PushService(){        
         Logger.info("Making push service");
-        threadPool = new ThreadPoolExecutor(10, 10, 10, TimeUnit.SECONDS, queue);    
-        threadPool.prestartCoreThread();
+        threadPool = new ThreadPoolExecutor(2, 2, 10, TimeUnit.SECONDS, queue);    
+        threadPool.prestartAllCoreThreads();
     }
     
     public void provide(EventPushTask task){
