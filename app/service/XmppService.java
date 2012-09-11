@@ -2,11 +2,9 @@ package service;
 
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Random;
 
 import play.Logger;
 import play.db.jpa.Transactional;
-import protocol.XMPPService;
 import tasks.EventPushTask;
 import test.*;
 
@@ -75,7 +73,7 @@ public class XmppService {
     
     public static XmppService getInstance(){
         if(instance == null){
-            synchronized(XMPPService.class){
+            synchronized(XmppService.class){
                 if(instance == null){
                     try {
                         instance = new XmppService();

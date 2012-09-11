@@ -30,21 +30,6 @@ import org.joda.time.*;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
 
-/*
- * RegEx example
- * DURATION_PAT = r'([+-])?P(?:(\d+)W)?(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?'
- * DURATION_REX = re.compile(DURATION_PAT)
- *    Example:
-   `parse_duration('P15DT5H20S')` -> `(None, None, '15', '5', None, '20')`
-   '''
-   groups = DURATION_REX.match(dur_str).groups()
-   vals = tuple(int(i) if i is not None else 0 for i in groups[1:])
-   return (groups[0] or '+',) + val
- */
-
-//Other method for adding custom validation by creating your own notations
-//http://stackoverflow.com/questions/8115106/how-to-create-a-custom-validator-in-play-framework-2-0
-
 public class Event{
 	
 	@Required(message = "Must enter an Event ID")

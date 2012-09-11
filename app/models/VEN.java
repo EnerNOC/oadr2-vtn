@@ -6,7 +6,6 @@ import java.util.List;
 import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
-import protocol.BaseProtocol;
 
 @Entity(name="Customers")
 @Table(name="CUSTOMERS")
@@ -28,9 +27,6 @@ public class VEN{
 	
 	@Column(name = "CLIENTURI")
 	private String clientURI;
-		
-	@Embedded
-	private BaseProtocol protocol;
 	
     @Id
     @Column(name = "ID")
@@ -80,14 +76,6 @@ public class VEN{
 
     public void setClientURI(String clientURI) {
         this.clientURI = clientURI;
-    }
-
-    public BaseProtocol getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(BaseProtocol protocol) {
-        this.protocol = protocol;
     }
 
 }

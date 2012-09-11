@@ -35,11 +35,7 @@ import service.EiEventService;
 import service.XmppService;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
-
-/*
- * Known error, trying to update an event and then inputting an incorrect
- * value to any field defaults the Start and End Time to current time.
- */
+//grep -r "" ./
 
 public class Events extends Controller {
     //
@@ -91,7 +87,6 @@ public class Events extends Controller {
     		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
     		  JPA.em().persist(newEvent);	  
-    		  //Here need to persist the entities for the Pending 1 state!
     		  //EiEventService.persistFromEiEvent(newEvent);
     		  
     		  flash("success", "Event as been created");
