@@ -1,6 +1,5 @@
 package controllers;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -14,14 +13,15 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
-import models.VEN;
 import models.Event;
 import models.Program;
+import models.VEN;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
-import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor.EiMarketContext;
+import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
+import org.enernoc.open.oadr2.model.MarketContext;
 import org.joda.time.DateTime;
 
 import play.Logger;
@@ -31,9 +31,8 @@ import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import service.EiEventService;
 import service.XmppService;
-
+//
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
 //grep -r "" ./
 
@@ -55,8 +54,8 @@ public class Events extends Controller {
       public static Result events(){
     	  class EiEventComparator implements Comparator<EiEvent>{
     		  public int compare(EiEvent eventOne, EiEvent eventTwo){
-    			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem().compareTo(
-    					  eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTimeItem());
+    			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
+    			          eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
     		  }
     	  } 
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
@@ -68,11 +67,11 @@ public class Events extends Controller {
     	  return ok(views.html.events.render(eiEvents, new Event()));
       }
       
-    public static Result blankEvent(){
+      public static Result blankEvent(){
     	  Event newForm = new Event();
     	  return ok(views.html.newEvent.render(form(Event.class).fill(newForm), newForm, makeProgramMap()));
-      }
-      
+      }    
+    
       @Transactional
       //Method to create a new event once on the newEvent page
       public static Result newEvent() throws JAXBException{
@@ -85,7 +84,7 @@ public class Events extends Controller {
     		  Event newEventForm = filledForm.get();
     		  EiEvent newEvent = newEventForm.toEiEvent();
     		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
-    		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(contextName));
+    		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(new MarketContext(contextName)));
     		  JPA.em().persist(newEvent);	  
     		  //EiEventService.persistFromEiEvent(newEvent);
     		  
@@ -94,9 +93,13 @@ public class Events extends Controller {
     		  populateFromPush(newEvent);
     		  
     		  XmppService.populateThreadPool(newEvent);
-    		  return redirect(routes.Events.newEvent());		  
+    		  return redirect(routes.OadrEvents.requests(newEvent.getEventDescriptor().getEventID()));
+    		  //return redirect(routes.Events.newEvent());		  
     	  }
       }
+      
+
+  
       
       @Transactional
       //Deletes an event based on the id
@@ -143,8 +146,10 @@ public class Events extends Controller {
       @Transactional
       public static void updateStatus(EiEvent event){
           DateTime currentTime = new DateTime();
-          DateTime startTime = new DateTime(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
-          long endMillis = currentTime.getMillis() + Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration());
+          String time = "2012-09-17T13:00:52.274-04:00";
+          //DateTime startTime = new DateTime(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString());
+          DateTime startTime = new DateTime(time);
+          long endMillis = currentTime.getMillis() + Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
           if(currentTime.getMillis() < startTime.getMillis()){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
           }
@@ -163,13 +168,13 @@ public class Events extends Controller {
       @Transactional
       public static void populateFromPush(EiEvent e){
           List<VEN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program and c.clientURI != ''")
-                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext())
+                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
                   .getResultList();
           for(VEN c : customers){
               VENStatus v = new VENStatus();
               v.setOptStatus("Pending 1");
               //TODO Need to make the Request ID a UNIQUE Alpha Numeric string! Ask Brian/Thom if that is correct
-              v.setRequestID(e.getEventDescriptor().getEventID());
+              v.setRequestID(c.getClientURI());
               v.setEventID(e.getEventDescriptor().getEventID());
               v.setProgram(c.getProgramId());
               v.setVenID(c.getVenID());
@@ -181,7 +186,6 @@ public class Events extends Controller {
       @SuppressWarnings("unchecked")
       @Transactional
       public static Map<String, String> makeProgramMap(){
-          //JPA.em() doesn't work...
           List<Program> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
           Map<String, String> programMap = new HashMap<String, String>();
     	  for(Program program : programList){

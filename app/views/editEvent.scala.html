@@ -95,27 +95,5 @@
             <input type="submit" value="Save this event" class="btn primary"> or 
             <a href="@routes.Events.events()" class="btn">Cancel</a>     
         </div>
-        <script>
-			$(function(){
-				$('#dp1').datepicker({
-					format: 'mm-dd-yyyy'
-				});
-				$('#dp2').datepicker({
-					format: 'mm-dd-yyyy'
-				});
-				$('#tp1').timepicker({
-					defaultTime: '@eiEvent.startTime',
-					minuteStep: 15,
-					disableFocus: true,
-					template: 'dropdown'
-				});
-				$('#tp2').timepicker({
-					defaultTime: '@eiEvent.endTime',
-					minuteStep: 15,
-					disableFocus: true,
-					template: 'dropdown'
-				});
-			});
-		</script>
 	}
 }

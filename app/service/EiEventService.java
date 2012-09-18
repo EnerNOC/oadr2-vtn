@@ -3,7 +3,6 @@ package service;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -13,9 +12,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.inject.Inject;
 
 import models.VEN;
 import models.VENStatus;
@@ -27,12 +23,10 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
-import org.w3c.dom.Document;
+import org.enernoc.open.oadr2.model.ResponseCode;
 
 import play.Logger;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
-import play.mvc.Controller;
 import play.mvc.Result;
 
 public class EiEventService{
@@ -72,7 +66,7 @@ public class EiEventService{
         
         EiResponse eiResponse = new EiResponse()        
             //TODO Need to handle non 200 responses
-            .withResponseCode("200")
+            .withResponseCode(new ResponseCode("200"))
             .withResponseDescription("Optional description!"); 
         
         return play.mvc.Action.ok(marshalObject(eiResponse));
@@ -87,7 +81,7 @@ public class EiEventService{
         }
         
         //TODO Need to handle non 200 responses
-        eiResponse.setResponseCode("200");        
+        eiResponse.setResponseCode(new ResponseCode("200"));        
         createNewEm();
         entityManager.persist(oRequestEvent);  
         entityManager.getTransaction().commit();        
@@ -108,7 +102,7 @@ public class EiEventService{
                     .getSingleResult();   
             
         }catch(NoResultException e){e.printStackTrace();};
-        response.withOadrEvent(new OadrEvent().withEiEvent(event));
+        response.withOadrEvents(new OadrEvent().withEiEvent(event));
         response.withRequestID(eiResponse.getRequestID());
         return play.mvc.Action.ok(marshalObject(response));
     }
@@ -132,10 +126,10 @@ public class EiEventService{
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                     .getSingleResult();
-        }catch(NoResultException e){Logger.warn("NoResultException in persistFromRequestEvent");};
-        if(venStatus == null){
-            venStatus = new VENStatus();
         }
+        catch(NoResultException e){
+            venStatus = new VENStatus();
+        };
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
         
@@ -175,34 +169,13 @@ public class EiEventService{
                     .getSingleResult();
         }catch(Exception e){Logger.warn("Caught exception, either NoResult or NonUnique from persistFromCreatedEvent() in EiEventService");};
         if(status != null){
-            status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
+            status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getOptType().toString());
             status.setTime(new Date());
             createNewEm();
             entityManager.merge(status);    
             entityManager.getTransaction().commit();
         }
     }
-    
-    /*
-    public static void persistFromEiEvent(EiEvent eiEvent){   
-        Logger.info("Persisting from EiEvent");
-        VENStatus status = null;
-        createNewEm();
-        try{
-            status = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
-                    "status WHERE status.venID = :ven")
-                    .setParameter("ven", eiEvent.getEventDescriptor().getEventID())
-                    .getSingleResult();
-        }catch(NoResultException e){};
-        if(status == null){
-            status = new VENStatus();
-            status.setTime(new Date());
-            createNewEm();
-            entityManager.merge(status);
-            entityManager.getTransaction().commit();
-        }
-    }
-    */
     
     public static void persistFromResponse(OadrResponse response){
         VENStatus status = null;

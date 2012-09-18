@@ -25,6 +25,7 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
+import org.enernoc.open.oadr2.model.ResponseCode;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -109,33 +110,42 @@ public class XmppService {
             public void processPacket(Packet packet){
                 OADR2PacketExtension extension = (OADR2PacketExtension)packet.getExtension(OADR2_XMLNS);
                 Object packetObject = null;
+                //Logger.warn("Processing a packet!");
                 //Logger.info("Packet contains: " + packet.toXML().toString());
                 try {
                     packetObject = EiEventService.unmarshalRequest(extension.toXML().getBytes());
-                } catch (JAXBException e) {}
-                if(packetObject instanceof OadrRequestEvent || packetObject instanceof OadrCreatedEvent){
-                    if(packetObject instanceof OadrRequestEvent){
-                        OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
-                        EiEventService.persistFromRequestEvent(requestEvent);
-                            try {
-                                sendXMPPDistribute(requestEvent);
-                            } catch (JAXBException e) {
-                                Logger.warn("Exception thrown from OadrRequestEvent packet listener");
-                                e.printStackTrace();
-                            }
+                } catch (JAXBException e) {Logger.warn("Packet cannot be unmarshalled.");}
+                if(packetObject instanceof OadrRequestEvent){
+                    OadrRequestEvent requestEvent = (OadrRequestEvent)packetObject;
+                    EiEventService.persistFromRequestEvent(requestEvent);
+                    try {
+                        sendXMPPDistribute(requestEvent);
+                    } catch (JAXBException e) {
+                        Logger.warn("Exception thrown from OadrRequestEvent packet listener");
+                        e.printStackTrace();
                     }
-                    else if(packetObject instanceof OadrCreatedEvent){
-                        OadrCreatedEvent createdEvent = (OadrCreatedEvent)packetObject;
-                        EiEventService.persistFromCreatedEvent(createdEvent);
-                            try {
-                                sendXMPPResponse(createdEvent);
-                            } catch (JAXBException e) {
-                                Logger.warn("Exception thrown from OadrCreatedEvent packet listener.");
-                                e.printStackTrace();
-                            }
+                }
+                else if(packetObject instanceof OadrCreatedEvent){
+                    OadrCreatedEvent createdEvent = (OadrCreatedEvent)packetObject;
+                    EiEventService.persistFromCreatedEvent(createdEvent);
+                    try {
+                        sendXMPPResponse(createdEvent);
+                    } catch (JAXBException e) {
+                        Logger.warn("Exception thrown from OadrCreatedEvent packet listener.");
+                        e.printStackTrace();
                     }
-                }          
-            }
+                }
+                else if(packetObject instanceof OadrResponse){
+                    //Logger.info("Got an OadrResponse");
+                    OadrResponse response = (OadrResponse)packetObject;
+                    EiEventService.persistFromResponse(response);                        
+                }
+                else{
+                    //Logger.warn("Got a packet that wasn't a Request or Created or Response!");
+                    OadrResponse response = new OadrResponse().withEiResponse(new EiResponse().withRequestID(packet.getFrom()));
+                    EiEventService.persistFromResponse(response);
+                }
+            }         
         };
     }
     
@@ -143,6 +153,12 @@ public class XmppService {
         return new PacketFilter(){
             @Override
             public boolean accept(Packet packet){
+                /*
+                Logger.warn("Got a packet.");
+                for(PacketExtension p : packet.getExtensions()){
+                    Logger.info("Packet Extension: " + p.getNamespace());
+                }
+                */
                 return packet.getExtension(OADR2_XMLNS) != null;
             }
         };
@@ -173,8 +189,8 @@ public class XmppService {
                 .setParameter("id", eventId)
                 .getSingleResult();
         
-        OadrDistributeEvent distributeEvent = new OadrDistributeEvent().withOadrEvent(new OadrEvent().withEiEvent(event))
-                .withEiResponse(new EiResponse().withResponseCode("200"));
+        OadrDistributeEvent distributeEvent = new OadrDistributeEvent().withOadrEvents(new OadrEvent().withEiEvent(event))
+                .withEiResponse(new EiResponse().withResponseCode(new ResponseCode("200")));
         
         StringWriter out = new StringWriter();
         marshaller.marshal(distributeEvent, out);
@@ -192,7 +208,7 @@ public class XmppService {
     public void sendXMPPResponse(OadrCreatedEvent createdEvent) throws JAXBException{
         OadrResponse response = new OadrResponse();
         response.withEiResponse(new EiResponse().withRequestID(createdEvent.getEiCreatedEvent().getEiResponse().getRequestID())
-                .withResponseCode("200"));
+                .withResponseCode(new ResponseCode("200")));
         StringWriter out = new StringWriter();
         marshaller.marshal(response, out);
         
@@ -223,7 +239,7 @@ public class XmppService {
         
         for(VEN customer: customers){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvent(new OadrEvent().withEiEvent(e))
+            .withOadrEvents(new OadrEvent().withEiEvent(e))
             .withVtnID(vtnConnection.getUser());
             IQ iq = new OADR2IQ(new OADR2PacketExtension(distribute, marshaller));
             iq.setTo(customer.getClientURI());
@@ -247,18 +263,18 @@ public class XmppService {
         createNewEm();
         
         List<VEN> customers = entityManager.createQuery("SELECT c FROM Customers c WHERE c.programId = :uri and c.clientURI != ''")
-                .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext())
+                .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
                 .getResultList();
         
         for(int i = 0; i < customers.size(); i++){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvent(new OadrEvent().withEiEvent(e))
+            .withOadrEvents(new OadrEvent().withEiEvent(e))
             .withVtnID(vtnConnection.getUser());
             
             distribute.setEiResponse(new EiResponse().withRequestID("Request ID")
-                    .withResponseCode("200")
+                    .withResponseCode(new ResponseCode("200"))
                     .withResponseDescription("Response Description"));
-            distribute.getOadrEvent().add(new OadrEvent().withEiEvent(e));
+            distribute.getOadrEvents().add(new OadrEvent().withEiEvent(e));
             distribute.setRequestID("Request ID");
             distribute.setVtnID("VTN ID");
             pushService.provide(new EventPushTask(customers.get(i).getClientURI(), distribute));     

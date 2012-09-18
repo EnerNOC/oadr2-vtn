@@ -13,20 +13,22 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.enernoc.open.oadr2.model.Dtstart;
 import org.enernoc.open.oadr2.model.DurationPropType;
+import org.enernoc.open.oadr2.model.DurationValue;
+import org.enernoc.open.oadr2.model.EiActivePeriod;
 import org.enernoc.open.oadr2.model.EiEvent;
+import org.enernoc.open.oadr2.model.EiEventSignal;
+import org.enernoc.open.oadr2.model.EiEventSignals;
+import org.enernoc.open.oadr2.model.EventDescriptor;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.Properties;
-import org.enernoc.open.oadr2.model.EiEvent.EiActivePeriod;
-import org.enernoc.open.oadr2.model.EiEvent.EiEventSignals;
-import org.enernoc.open.oadr2.model.EiEvent.EventDescriptor;
-import org.enernoc.open.oadr2.model.EiEvent.EiEventSignals.EiEventSignal;
-import org.enernoc.open.oadr2.model.Properties.Dtstart;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
-import org.joda.time.*;
-
+import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
 
@@ -77,10 +79,10 @@ public class Event{
 		this.eventID = e.getEventDescriptor().getEventID();
 		this.priority = e.getEventDescriptor().getPriority();
 		this.status = e.getEventDescriptor().getEventStatus().value();
-		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString();
-		this.duration = e.getEiActivePeriod().getProperties().getDuration().getDuration();
-		this.signalID = e.getEiEventSignals().getEiEventSignal().get(0).getSignalID();
-		
+		//TODO This line below could be a bit picky come time for Edit
+		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString();
+		this.duration = e.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
+		this.signalID = e.getEiEventSignals().getEiEventSignals().get(0).getSignalID();
 		setStartDateTime(this.start);
 		setEndDateTime();
 	}
@@ -112,21 +114,21 @@ public class Event{
 			  e1.printStackTrace();
 		  }
 	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start);
-		  return eiEvent = new EiEvent()
-		  					.withEventDescriptor(new EventDescriptor()
-	  							.withEventID(eventID)
-	  							.withPriority(priority)
-	  							.withCreatedDateTime(startDttm))
-		  					.withEiActivePeriod(new EiActivePeriod()
-	  							.withProperties(new Properties()
-  									.withDtstart(new Dtstart(startDttm))
-  									.withDuration(new DurationPropType(duration))))
-		  					.withEiEventSignals(new EiEventSignals()
-		  						.withEiEventSignal(new EiEventSignal()
-		  							.withSignalID(signalID)
-		  							.withIntervals(new Intervals()
-	  									.withInterval(new Interval()
-	  									.withDuration( new DurationPropType(duration))))));
+	    return eiEvent = new EiEvent()	                    
+	  					.withEventDescriptor(new EventDescriptor()
+  							.withEventID(eventID)
+  							.withPriority(priority)
+  							.withCreatedDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
+	  					.withEiActivePeriod(new EiActivePeriod()
+  							.withProperties(new Properties()
+								.withDtstart(new Dtstart(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
+								.withDuration(new DurationPropType(new DurationValue(duration)))))
+	  					.withEiEventSignals(new EiEventSignals()
+	  						.withEiEventSignals(new EiEventSignal()
+	  							.withSignalID(signalID)
+	  							.withIntervals(new Intervals()
+  									.withIntervals(new Interval()
+  									.withDuration( new DurationPropType(new DurationValue(duration)))))));
 	}
 	
 	//old toString method used for testing content of the eiEvent
@@ -135,9 +137,9 @@ public class Event{
 		returnString += "\nEventID: " + eiEvent.getEventDescriptor().getEventID() + "\n";
 		returnString += "Priority: " + eiEvent.getEventDescriptor().getPriority() + "\n";
 		returnString += "Status: " + eiEvent.getEventDescriptor().getEventStatus().toString() + "\n";
-		returnString += "Start: " + eiEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString() + "\n";
+		returnString += "Start: " + eiEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString() + "\n";
 		returnString += "Duration: " + eiEvent.getEiActivePeriod().getProperties().getDuration().getDuration() + "\n";
-		returnString += "SignalID: " + eiEvent.getEiEventSignals().getEiEventSignal().get(0).getSignalID() + "";
+		returnString += "SignalID: " + eiEvent.getEiEventSignals().getEiEventSignals().get(0).getSignalID() + "";
 		return returnString;		
 	}
 	
@@ -162,9 +164,9 @@ public class Event{
 		duration = createXCalString(getMinutesDuration());
 		this.start = createXMLTime(startDate, startTime);
 	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start); //NEED TO ADD START
-		eiEvent.getEiActivePeriod().getProperties().getDtstart().setDateTime(startDttm);
-		eiEvent.getEiActivePeriod().getProperties().getDuration().setDuration(this.duration);
-		eiEvent.getEiEventSignals().getEiEventSignal().get(0).setSignalID(this.signalID);
+		eiEvent.getEiActivePeriod().getProperties().getDtstart().setDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm));
+		eiEvent.getEiActivePeriod().getProperties().getDuration().setDuration(new DurationValue(this.duration));
+		eiEvent.getEiEventSignals().getEiEventSignals().get(0).setSignalID(this.signalID);
 	}
 	
 	//takes in a string of a date and string of time in specific form
@@ -228,6 +230,7 @@ public class Event{
 	//sets the startDate and startTime based on the string from ical
 	private void setStartDateTime(String startString){
 		this.startDate = makeStartDate(startString);
+		Logger.info("Start string setSDT = " + startString);
 		this.startTime = makeStartTime(startString);
 	}
 	
@@ -236,6 +239,7 @@ public class Event{
 	}
 	
 	public String makeStartTime(String startString){
+	    Logger.info(startString);
 		int startHours = Integer.parseInt(startString.substring(11, 13));
 		String startSuffix = " AM";		
 		if(startHours >= 12){
@@ -326,7 +330,6 @@ public class Event{
 		if(m.group(4) != null){
 			returnMinutes += Integer.parseInt(m.group(4));
 		}
-		
 		return returnMinutes;	
 	}
 	
@@ -335,6 +338,7 @@ public class Event{
 	}
 	
 	public String displayReadableStart(String s){
+        Logger.info("Duration - " + s);
 		String time = makeStartTime(s);
 		time = time.replace("00:", "12:");
 		return makeStartDate(s) + " @ " + time;

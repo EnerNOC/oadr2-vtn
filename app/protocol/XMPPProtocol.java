@@ -54,7 +54,7 @@ public class XMPPProtocol extends BaseProtocol{
         
         for(VEN customer: customers){
             OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvent(new OadrEvent().withEiEvent(eiEvent))
+            .withOadrEvents(new OadrEvent().withEiEvent(eiEvent))
             .withVtnID(connection.getUser());
             IQ iq = null;
             try {
@@ -62,8 +62,8 @@ public class XMPPProtocol extends BaseProtocol{
             } catch (JAXBException e) {
                 Logger.warn("Exception thrown from XMPP send(eiEvent)");
             }
-            //TODO iq.setTo(customer.getClientURI());
-            iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
+            iq.setTo(customer.getClientURI());
+            //iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
             iq.setType(IQ.Type.SET);
             //TODO Check out WHY this gives a feature-not-implemented error, makes NO sense
             connection.sendPacket(iq);      

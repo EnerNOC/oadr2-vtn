@@ -66,7 +66,7 @@ public class HTTPProtocol extends BaseProtocol{
                     .getSingleResult();
         }catch(Exception e){Logger.warn("send(OadrCreatedEvent) threw either a NoResult or MultipleResult Exception");};
         if(status != null){
-            status.setOptStatus(oadrCreatedEvent.getEiCreatedEvent().getEventResponses().getEventResponse().get(0).getOptType().toString());
+            status.setOptStatus(oadrCreatedEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getOptType().toString());
             status.setTime(new Date());
             createNewEm();
             entityManager.merge(status);    
