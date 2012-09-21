@@ -36,7 +36,7 @@
 				</td>
 				<td>@status.displayTime()</td>
 				<td>
-					@form(routes.OadrEvents.deleteRequest(program, status.getId())){
+					@form(routes.VENStatuses.deleteStatus(program, status.getId())){
 						<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 					}
 				</td>	

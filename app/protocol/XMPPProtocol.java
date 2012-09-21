@@ -63,9 +63,7 @@ public class XMPPProtocol extends BaseProtocol{
                 Logger.warn("Exception thrown from XMPP send(eiEvent)");
             }
             iq.setTo(customer.getClientURI());
-            //iq.setTo("xmpp-ven@msawant-mbp.local/msawant-mbp");
             iq.setType(IQ.Type.SET);
-            //TODO Check out WHY this gives a feature-not-implemented error, makes NO sense
             connection.sendPacket(iq);      
         }        
     }

@@ -28,7 +28,7 @@
             <tbody>            	
 				@for(event <- eventsList){
 					<tr>
-						<td><a href="@routes.OadrEvents.requests(event.getEventDescriptor().getEventID())">@event.getEventDescriptor().getEventID()</a></td>
+						<td><a href="@routes.VENStatuses.venStatuses(event.getEventDescriptor().getEventID())">@event.getEventDescriptor().getEventID()</a></td>
 						<td>@event.getEventDescriptor().getPriority()</td>
 						<td>@event.getEventDescriptor().getEventStatus()</td>
 						<td>@eventForm.displayReadableStart(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString())</td>

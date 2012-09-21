@@ -16,7 +16,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import service.*;
 
-public class OadrEvents extends Controller{
+public class VENStatuses extends Controller{
     
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -26,9 +26,9 @@ public class OadrEvents extends Controller{
 			
 	@SuppressWarnings("unchecked")
     @Transactional
-	public static Result requests(String program) {
+	public static Result venStatuses(String program) {
 	    List<EiEvent> programs = JPA.em().createQuery("From EiEvent").getResultList();
-		return ok(views.html.requests.render(program, programs));
+		return ok(views.html.venStatuses.render(program, programs));
 	}
 	
 	@SuppressWarnings({ "unchecked" })
@@ -51,24 +51,25 @@ public class OadrEvents extends Controller{
 			}
 		}				
 		Collections.sort(listStatusObjects, new StatusObjectComparator());		
-		return ok(views.html.responseTable.render(listStatusObjects, program));
+		return ok(views.html.venStatusTable.render(listStatusObjects, program));
 	}
 	
     @Transactional
 	public static Result sendXMPPCreated(String event){
-        return redirect(routes.OadrEvents.requests(event));
+        return redirect(routes.VENStatuses.venStatuses(event));
 	}
 	
 	
 	@Transactional
 	//Deletes an event based on the id
-	public static Result deleteRequest(String program, Long id){
+	public static Result deleteStatus(String program, Long id){
 	    JPA.em().remove(JPA.em().find(VENStatus.class, id));
-	    return redirect(routes.OadrEvents.requests(program));
+	    return redirect(routes.VENStatuses.venStatuses(program));
 	}
 	
 	@Transactional
 	public static Result sendHttpResponse() throws JAXBException{
-	    return(eiEventService.sendMarshalledObject(EiEventService.unmarshalRequest(request().body().asRaw().asBytes())));
+	    return(eiEventService.handleOadrPayload(
+	            eiEventService.unmarshalRequest(request().body().asRaw().asBytes())));
 	}
 }

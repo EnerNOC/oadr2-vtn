@@ -230,7 +230,6 @@ public class Event{
 	//sets the startDate and startTime based on the string from ical
 	private void setStartDateTime(String startString){
 		this.startDate = makeStartDate(startString);
-		Logger.info("Start string setSDT = " + startString);
 		this.startTime = makeStartTime(startString);
 	}
 	
@@ -239,7 +238,6 @@ public class Event{
 	}
 	
 	public String makeStartTime(String startString){
-	    Logger.info(startString);
 		int startHours = Integer.parseInt(startString.substring(11, 13));
 		String startSuffix = " AM";		
 		if(startHours >= 12){
@@ -338,7 +336,6 @@ public class Event{
 	}
 	
 	public String displayReadableStart(String s){
-        Logger.info("Duration - " + s);
 		String time = makeStartTime(s);
 		time = time.replace("00:", "12:");
 		return makeStartDate(s) + " @ " + time;
@@ -391,5 +388,9 @@ public class Event{
 		}
 		
 		return true;
+	}
+	
+	public void convertDateTimeToJoda(){
+	    
 	}
 }

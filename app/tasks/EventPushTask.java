@@ -17,6 +17,7 @@ public class EventPushTask implements Runnable{
     
     public EventPushTask(String jid, OadrDistributeEvent distributeEvent){
         this.distributeEvent = distributeEvent;
+        //switch to uri
         this.jid = jid;
     }
 
@@ -30,6 +31,7 @@ public class EventPushTask implements Runnable{
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        //if else for protocol type
         xmppService.sendObjectToJID(distributeEvent, jid);
         
         //TODO Write the method to persist to the database and get the send information ready

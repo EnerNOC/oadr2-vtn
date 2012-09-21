@@ -6,7 +6,7 @@
 GET	/						controllers.Programs.index()
 
 # Test
-#GET /test					controllers.OadrEvents.index()
+#GET /test					controllers.VENStatuses.index()
 
 # Event List
 GET /events					controllers.Events.events()
@@ -32,19 +32,16 @@ POST	/programs					controllers.Programs.newProgram()
 # Delete Event
 POST    /program/:id/delete       controllers.Programs.deleteProgram(id:Long)
 
-# Handle Request
-GET /requests/:program			controllers.OadrEvents.requests(program:String)
-POST /requests			controllers.OadrEvents.sendHttpResponse()
+# Handle Status
+GET /ven_statuses/:program			controllers.VENStatuses.venStatuses(program:String)
+# move into own controller
+POST /ven_statuses			controllers.VENStatuses.sendHttpResponse()
 
 # Display Page
-POST /requests/display		controllers.OadrEvents.renderAjaxTable(program:String)
+POST /ven_statuses/display		controllers.VENStatuses.renderAjaxTable(program:String)
 
-# Delete Request
-POST    /requests/:id/delete       controllers.OadrEvents.deleteRequest(program:String, id:Long)
-
-# XMPP Test
-# GET /test/request				controllers.OadrEvents.sendXMPPRequest(event:String)
-# GET /test/created				controllers.OadrEvents.sendXMPPCreated(event:String)
+# Delete Status
+POST    /ven_statuses/:id/delete       controllers.VENStatuses.deleteStatus(program:String, id:Long)
 
 # Customer List
 GET /customers					controllers.Customers.customers()

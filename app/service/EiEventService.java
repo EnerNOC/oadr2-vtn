@@ -37,31 +37,30 @@ public class EiEventService{
     public EiEventService(){
     }
     
-    public static Result sendMarshalledObject(Object o) throws JAXBException{
+    //change to handle xxxx oadrpayload
+    public static Result handleOadrPayload(Object o) throws JAXBException{
         if(o instanceof OadrRequestEvent){
+            //cast to a request event before passing to send()
             return sendDistributeFromRequest(o);
         }
         else if(o instanceof OadrCreatedEvent){
-            return sendResponseFromCreated(o);
+            return handleOadrCreated((OadrCreatedEvent)o);
         }
         else if(o instanceof OadrResponse){
             persistFromResponse((OadrResponse)o);
             return play.mvc.Action.ok();
         }
         else{
+            //move to controller for http specific, have it throw Exception
             return play.mvc.Action.badRequest("Object was not of correct class");
         }
     }    
     
     @Transactional
-    public static Result sendResponseFromCreated(Object o) throws JAXBException{
-        
-        OadrCreatedEvent oCreatedEvent = (OadrCreatedEvent) o;
-        oCreatedEvent.getEiCreatedEvent().getEiResponse().getRequestID();
-
-        persistFromCreatedEvent(oCreatedEvent);
+    public static Result handleOadrCreated(OadrCreatedEvent oadrCreatedEvent) throws JAXBException{
+        persistFromCreatedEvent(oadrCreatedEvent);
         createNewEm();
-        entityManager.persist(oCreatedEvent);
+        entityManager.persist(oadrCreatedEvent);
         entityManager.getTransaction().commit();
         
         EiResponse eiResponse = new EiResponse()        
@@ -192,12 +191,13 @@ public class EiEventService{
             createNewEm();
             entityManager.merge(status);
             entityManager.getTransaction().commit();
-        }
+        }        
     }
     
     public static Object unmarshalRequest(byte[] chars) throws JAXBException{    
         JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        Logger.info(new String(chars));
         Object o = unmarshaller.unmarshal(new ByteArrayInputStream(chars));
         return o;
     }

@@ -9,9 +9,9 @@
 	<select name="program"">
 		@for(p <- programs){
 			@if(program == p.getEventDescriptor().getEventID()){
-				<option selected="selected" value="@routes.OadrEvents.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>
+				<option selected="selected" value="@routes.VENStatuses.venStatuses(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>
 			}else{
-				<option value="@routes.OadrEvents.requests(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>		
+				<option value="@routes.VENStatuses.venStatuses(p.getEventDescriptor().getEventID())">@p.getEventDescriptor().getEventID()</option>		
 			}
 		}
 	</select>
@@ -21,7 +21,7 @@
 	<script>	
 		$(document).ready(function(){	
 			var loadOadrEvents = function(){
-				$.post('@routes.OadrEvents.renderAjaxTable(program)',
+				$.post('@routes.VENStatuses.renderAjaxTable(program)',
 						"",
 						function(data){
 							$('#xmlOutput').empty();
@@ -31,8 +31,8 @@
 				});
 			};
 				loadOadrEvents();
-				$('#requestbutton').click(function(){
-					$(this).text("Loading request...");
+				$('#Statusbutton').click(function(){
+					$(this).text("Loading Status...");
 					loadOadrEvents();
 					$(this).text("Refresh");
 				});

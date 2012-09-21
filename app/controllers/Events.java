@@ -3,6 +3,7 @@ package controllers;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,17 +13,20 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 
 import models.Event;
 import models.Program;
 import models.VEN;
 import models.VENStatus;
 
+import org.enernoc.open.oadr2.model.DateTime;
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.MarketContext;
-import org.joda.time.DateTime;
 
 import play.Logger;
 import play.data.Form;
@@ -31,16 +35,15 @@ import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import service.PushService;
 import service.XmppService;
-//
-//export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
-//grep -r "" ./
 
 public class Events extends Controller {
-    //
-    @Inject static XmppService xmppService;
+      
+      @Inject static XmppService xmppService;
+      @Inject static PushService pushService;
     
-    static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
+      static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
       static EntityManager entityManager = entityManagerFactory.createEntityManager();
       
       //redirects to the events page
@@ -89,23 +92,20 @@ public class Events extends Controller {
     		  //EiEventService.persistFromEiEvent(newEvent);
     		  
     		  flash("success", "Event as been created");
-
-    		  populateFromPush(newEvent);
     		  
-    		  XmppService.populateThreadPool(newEvent);
-    		  return redirect(routes.OadrEvents.requests(newEvent.getEventDescriptor().getEventID()));
+    		  //pushservice.handlenewevent(newevent list<vens>)
+    		  List<VEN> vens = getVENs(newEvent);
+    		  populateFromPush(newEvent);
+    		  pushService.pushNewEvent(newEvent, vens);
+    		  return redirect(routes.VENStatuses.venStatuses(newEvent.getEventDescriptor().getEventID()));
     		  //return redirect(routes.Events.newEvent());		  
     	  }
       }
-      
-
-  
       
       @Transactional
       //Deletes an event based on the id
       public static Result deleteEvent(Long id){
     	  JPA.em().remove(JPA.em().find(EiEvent.class, id));
-    	  //JPA.em().remove(JPA.em().find(ProgramEventRelation.class, getRelationFromEvent(id).getId()));
           flash("success", "Event has been deleted");
           return redirect(routes.Events.events());
       }
@@ -145,10 +145,47 @@ public class Events extends Controller {
       
       @Transactional
       public static void updateStatus(EiEvent event){
-          DateTime currentTime = new DateTime();
-          String time = "2012-09-17T13:00:52.274-04:00";
-          //DateTime startTime = new DateTime(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString());
-          DateTime startTime = new DateTime(time);
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          
+          Date currentDate = new Date();          
+          GregorianCalendar calendar = new GregorianCalendar();
+          calendar.setTime(currentDate);
+          
+          DateTime currentTime = new DateTime().withValue(df.newXMLGregorianCalendar(calendar).normalize());
+          DateTime startTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+          DateTime endTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+                    
+          Duration d = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 3600);
+
+          endTime.getValue().add(d);
+          
+          Logger.info("Duration: " + d.toString());
+          Logger.info("Current Time: " + currentTime.getValue().toString());
+          Logger.info("Start Time: " + startTime.getValue().toString());
+          Logger.info("End Time: " + endTime.getValue().toString());
+          
+          if(currentTime.getValue().compare(startTime.getValue()) == -1){
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
+          }
+          else if(currentTime.getValue().compare(startTime.getValue()) > 0 && currentTime.getValue().compare(endTime.getValue()) == -1){
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.ACTIVE);              
+          }
+          else if(currentTime.getValue().compare(endTime.getValue()) > 0){
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);              
+          }
+          else{
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);              
+          }
+          
+          //TODO NEED TO GET THE DATETIME WORKING FOR THE NEW FORMAT FROM XMLGREGORIANCALENDAR
+          /*
+          Logger.info(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toLocaleString());
+          DateTime startTime = event.getEiActivePeriod().getProperties().getDtstart().getDateTime();
           long endMillis = currentTime.getMillis() + Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
           if(currentTime.getMillis() < startTime.getMillis()){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
@@ -162,25 +199,14 @@ public class Events extends Controller {
           else{
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);
           }
+          */
       }
       
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
-          List<VEN> customers = JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program and c.clientURI != ''")
-                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
-                  .getResultList();
-          for(VEN c : customers){
-              VENStatus v = new VENStatus();
-              v.setOptStatus("Pending 1");
-              //TODO Need to make the Request ID a UNIQUE Alpha Numeric string! Ask Brian/Thom if that is correct
-              v.setRequestID(c.getClientURI());
-              v.setEventID(e.getEventDescriptor().getEventID());
-              v.setProgram(c.getProgramId());
-              v.setVenID(c.getVenID());
-              v.setTime(new Date());
-              JPA.em().persist(v);              
-          }          
+          List<VEN> customers = getVENs(e);
+          prepareVENs(customers, e);
       }
      
       @SuppressWarnings("unchecked")
@@ -192,6 +218,26 @@ public class Events extends Controller {
     		  programMap.put(program.getId() + "", program.getProgramName());
     	  }
     	  return programMap;
+      }
+      
+      @SuppressWarnings("unchecked")
+      public static List<VEN> getVENs(EiEvent e){
+          return JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program and c.clientURI != ''")
+                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
+                  .getResultList();
+      }
+      
+      public static void prepareVENs(List<VEN> vens, EiEvent e){
+          for(VEN v : vens){
+              VENStatus venStatus = new VENStatus();
+              venStatus.setOptStatus("Pending 1");
+              venStatus.setRequestID(v.getClientURI());
+              venStatus.setEventID(e.getEventDescriptor().getEventID());
+              venStatus.setProgram(v.getProgramId());
+              venStatus.setVenID(v.getVenID());
+              venStatus.setTime(new Date());
+              JPA.em().persist(venStatus);              
+          }    
       }
       
 }

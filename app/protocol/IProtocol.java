@@ -14,7 +14,7 @@ import models.VEN;
 public interface IProtocol {
     
     public enum ProtocolType{ XMPP, HTTP }
-    
+    //change VEN to a Stirng URI
     public void send(VEN vtn, OadrResponse oadrResponse);
     public void send(VEN vtn, EiEvent eiEvent);
     public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent);

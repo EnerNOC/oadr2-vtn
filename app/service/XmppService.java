@@ -38,9 +38,9 @@ import org.jivesoftware.smack.packet.PacketExtension;
 public class XmppService {
 
     private static volatile XmppService instance = null;
-    
-    static final String OADR2_XMLNS = "http://openadr.org/oadr-2.0a/2012/03";
         
+    static final String OADR2_XMLNS = "http://openadr.org/oadr-2.0a/2012/07";
+    
     private ConnectionConfiguration connConfig = new ConnectionConfiguration("msawant-mbp.local", 5222);
     
     private static XMPPConnection vtnConnection;
@@ -136,12 +136,12 @@ public class XmppService {
                     }
                 }
                 else if(packetObject instanceof OadrResponse){
-                    //Logger.info("Got an OadrResponse");
+                    Logger.info("Got an OadrResponse");
                     OadrResponse response = (OadrResponse)packetObject;
                     EiEventService.persistFromResponse(response);                        
                 }
                 else{
-                    //Logger.warn("Got a packet that wasn't a Request or Created or Response!");
+                    Logger.warn("Got a packet that wasn't a Request or Created or Response!");
                     OadrResponse response = new OadrResponse().withEiResponse(new EiResponse().withRequestID(packet.getFrom()));
                     EiEventService.persistFromResponse(response);
                 }
@@ -153,12 +153,12 @@ public class XmppService {
         return new PacketFilter(){
             @Override
             public boolean accept(Packet packet){
-                /*
-                Logger.warn("Got a packet.");
+                
+                Logger.warn(packet.toXML());
                 for(PacketExtension p : packet.getExtensions()){
                     Logger.info("Packet Extension: " + p.getNamespace());
                 }
-                */
+                
                 return packet.getExtension(OADR2_XMLNS) != null;
             }
         };
@@ -255,30 +255,6 @@ public class XmppService {
         iq.setTo(jid);
         iq.setType(IQ.Type.SET);
         vtnConnection.sendPacket(iq);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Transactional
-    public static void populateThreadPool(EiEvent e) throws JAXBException{
-        createNewEm();
-        
-        List<VEN> customers = entityManager.createQuery("SELECT c FROM Customers c WHERE c.programId = :uri and c.clientURI != ''")
-                .setParameter("uri", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
-                .getResultList();
-        
-        for(int i = 0; i < customers.size(); i++){
-            OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvents(new OadrEvent().withEiEvent(e))
-            .withVtnID(vtnConnection.getUser());
-            
-            distribute.setEiResponse(new EiResponse().withRequestID("Request ID")
-                    .withResponseCode(new ResponseCode("200"))
-                    .withResponseDescription("Response Description"));
-            distribute.getOadrEvents().add(new OadrEvent().withEiEvent(e));
-            distribute.setRequestID("Request ID");
-            distribute.setVtnID("VTN ID");
-            pushService.provide(new EventPushTask(customers.get(i).getClientURI(), distribute));     
-        }
     }
     
 }
