@@ -14,8 +14,10 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import models.Event;
 import models.Program;
@@ -52,7 +54,7 @@ public class Events extends Controller {
       }
       
       // requests page, displays all events currently in the database
-      @SuppressWarnings("unchecked")
+      @SuppressWarnings("unchecked") //FFFFUUUU DOESN'T SUPPRESS THE WARNING
       @Transactional
       public static Result events(){
     	  class EiEventComparator implements Comparator<EiEvent>{
@@ -64,6 +66,7 @@ public class Events extends Controller {
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
     	  Collections.sort(eiEvents, new EiEventComparator());
     	  for(EiEvent e : eiEvents){
+    	      Logger.info("postPersist is: " + e.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
     	      updateStatus(e);
     	  }
     	  
@@ -88,11 +91,10 @@ public class Events extends Controller {
     		  EiEvent newEvent = newEventForm.toEiEvent();
     		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(new MarketContext(contextName)));
-    		  JPA.em().persist(newEvent);	  
-    		  //EiEventService.persistFromEiEvent(newEvent);
-    		  
-    		  flash("success", "Event as been created");
-    		  
+    		  newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().setValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+    		  Logger.info("prePersist is: " + newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
+    		  JPA.em().persist(newEvent);	      		  
+    		  flash("success", "Event as been created");    		  
     		  //pushservice.handlenewevent(newevent list<vens>)
     		  List<VEN> vens = getVENs(newEvent);
     		  populateFromPush(newEvent);
@@ -118,7 +120,7 @@ public class Events extends Controller {
           }
           Event eiEventForm= eventForm.get();
           eiEventForm.copyEvent(JPA.em().find(EiEvent.class, id));
-          EiEvent event = JPA.em().find(EiEvent.class, id); //is actually used, eclipse is a liar
+          EiEvent event = JPA.em().find(EiEvent.class, id);
           event = eiEventForm.getEiEvent();
           JPA.em().merge(event);
           flash("success", "Event has been updated");
@@ -155,20 +157,17 @@ public class Events extends Controller {
           Date currentDate = new Date();          
           GregorianCalendar calendar = new GregorianCalendar();
           calendar.setTime(currentDate);
+          XMLGregorianCalendar xCalendar = df.newXMLGregorianCalendar(calendar);
+          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
           
-          DateTime currentTime = new DateTime().withValue(df.newXMLGregorianCalendar(calendar).normalize());
+          DateTime currentTime = new DateTime().withValue(xCalendar);
           DateTime startTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           DateTime endTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
-                    
-          Duration d = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 3600);
+          
+          Duration d = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
 
           endTime.getValue().add(d);
-          
-          Logger.info("Duration: " + d.toString());
-          Logger.info("Current Time: " + currentTime.getValue().toString());
-          Logger.info("Start Time: " + startTime.getValue().toString());
-          Logger.info("End Time: " + endTime.getValue().toString());
-          
+                  
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
           }
@@ -181,25 +180,6 @@ public class Events extends Controller {
           else{
               event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);              
           }
-          
-          //TODO NEED TO GET THE DATETIME WORKING FOR THE NEW FORMAT FROM XMLGREGORIANCALENDAR
-          /*
-          Logger.info(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toLocaleString());
-          DateTime startTime = event.getEiActivePeriod().getProperties().getDtstart().getDateTime();
-          long endMillis = currentTime.getMillis() + Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
-          if(currentTime.getMillis() < startTime.getMillis()){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
-          }
-          else if(currentTime.getMillis() >= startTime.getMillis() && currentTime.getMillis() < endMillis){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.ACTIVE);
-          }
-          else if(currentTime.getMillis() >= endMillis){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);
-          }
-          else{
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);
-          }
-          */
       }
       
       @SuppressWarnings("unchecked")

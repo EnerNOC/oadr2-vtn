@@ -11,8 +11,10 @@ import java.util.regex.Pattern;
 import javax.validation.Valid;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.enernoc.open.oadr2.model.DateTime;
 import org.enernoc.open.oadr2.model.Dtstart;
 import org.enernoc.open.oadr2.model.DurationPropType;
 import org.enernoc.open.oadr2.model.DurationValue;
@@ -25,8 +27,6 @@ import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.Properties;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 import play.Logger;
 import play.data.validation.Constraints.Min;
@@ -37,7 +37,7 @@ public class Event{
 	@Required(message = "Must enter an Event ID")
 	public String eventID;
 	@Required(message = "Must enter a Priority")
-	@Min(message = "Priority must be greater than zero", value = 1)
+	@Min(message = "Priority must be greater than zero", value = 0)
 	@Valid
 	public long priority;
 	//@Required(message = "Must select a status")
@@ -113,12 +113,12 @@ public class Event{
 		  } catch (DatatypeConfigurationException e1) {
 			  e1.printStackTrace();
 		  }
-	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start);
+	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize();
 	    return eiEvent = new EiEvent()	                    
 	  					.withEventDescriptor(new EventDescriptor()
   							.withEventID(eventID)
   							.withPriority(priority)
-  							.withCreatedDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
+  							.withCreatedDateTime(new DateTime(startDttm)))
 	  					.withEiActivePeriod(new EiActivePeriod()
   							.withProperties(new Properties()
 								.withDtstart(new Dtstart(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
@@ -163,7 +163,7 @@ public class Event{
 		  }
 		duration = createXCalString(getMinutesDuration());
 		this.start = createXMLTime(startDate, startTime);
-	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start); //NEED TO ADD START
+	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize(); //NEED TO ADD START
 		eiEvent.getEiActivePeriod().getProperties().getDtstart().setDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm));
 		eiEvent.getEiActivePeriod().getProperties().getDuration().setDuration(new DurationValue(this.duration));
 		eiEvent.getEiEventSignals().getEiEventSignals().get(0).setSignalID(this.signalID);
@@ -199,7 +199,7 @@ public class Event{
 	// returns a date time obgram from two string inputs
 	// date = "MM-dd-yyyy" time = "h:mm" || time = "hh:mm"
 	// time must not be 0 start for hours
-	public DateTime createJodaTime(String date, String time){
+	public DateTime createDateTime(String date, String time){
 		int startYear = Integer.parseInt(date.substring(6, 10));
 		int startMonth = Integer.parseInt(date.substring(0, 2));
 		int startDay = Integer.parseInt(date.substring(3, 5));
@@ -211,20 +211,33 @@ public class Event{
 			startHour += 12;
 		}
 		int startMinute = Integer.parseInt(time.substring(3, 5));
+		DateTime dateTime = new DateTime();		
+        DatatypeFactory xmlDataTypeFac = null;
+        try {
+            xmlDataTypeFac = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e1) {
+            e1.printStackTrace();
+        }
+        XMLGregorianCalendar calendar = xmlDataTypeFac.newXMLGregorianCalendar();
+        calendar.setYear(startYear);
+        calendar.setMonth(startMonth);
+        calendar.setDay(startDay);
+        calendar.setHour(startHour);
+        calendar.setMinute(startMinute);
+		dateTime.setValue(calendar);
 		
-		return new DateTime(startYear, startMonth, startDay, startHour, startMinute);
+		return dateTime;
 	}
 	
 	// returns a difference in minutes between the start and end of the requested times
 	private long getMinutesDuration(){		
-		DateTime startJodaTime = createJodaTime(startDate, startTime);
-		DateTime endJodaTime = createJodaTime(endDate, endTime);
-		
-		org.joda.time.Interval i = new org.joda.time.Interval(startJodaTime, endJodaTime);
-		
-		Duration d = new Duration(i.getStartMillis(), i.getEndMillis());		
-				
-		return d.getStandardMinutes();
+		DateTime startDateTime = createDateTime(startDate, startTime);
+		DateTime endDateTime = createDateTime(endDate, endTime);
+
+        long milliseconds = endDateTime.getValue().toGregorianCalendar().getTimeInMillis() - startDateTime.getValue().toGregorianCalendar().getTimeInMillis();
+        long minutes = milliseconds / 60000;
+        
+        return minutes;
 	}
 	
 	//sets the startDate and startTime based on the string from ical
@@ -261,9 +274,18 @@ public class Event{
 	//should also make this extensible somehow
 	private void setEndDateTime(){
 
-		DateTime endJodaTime = createJodaTime(startDate, startTime); // temp == start time
-		endJodaTime = endJodaTime.plusMinutes(minutesFromXCal(duration));
-		String endString = endJodaTime.toString();
+
+        DatatypeFactory xmlDataTypeFac = null;
+        try {
+            xmlDataTypeFac = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e1) {
+            e1.printStackTrace();
+        }
+	    
+		DateTime endDateTime = createDateTime(startDate, startTime); // temp == start time
+		Duration duration = xmlDataTypeFac.newDuration(this.duration.toString());
+		endDateTime.getValue().add(duration);
+		String endString = endDateTime.toString();
 		
 		this.endDate = endString.substring(5, 7) + "-" + endString.substring(8, 10) + "-" + endString.substring(0, 4);
 		int startHours = Integer.parseInt(endString.substring(11, 13));
@@ -381,13 +403,9 @@ public class Event{
 	}
 	
 	public boolean startIsBeforeEnd(String startDate, String startTime, String endDate, String endTime){		
-		DateTime jodaStart = createJodaTime(startDate, startTime);
-		DateTime jodaEnd = createJodaTime(endDate, endTime);
-		if(jodaStart.getMillis() > jodaEnd.getMillis()){
-			return false;
-		}
-		
-		return true;
+		DateTime dtStart = createDateTime(startDate, startTime);
+		DateTime dtEnd = createDateTime(endDate, endTime);
+		return dtStart.getValue().toGregorianCalendar().getTimeInMillis() <= dtEnd.getValue().toGregorianCalendar().getTimeInMillis();	
 	}
 	
 	public void convertDateTimeToJoda(){

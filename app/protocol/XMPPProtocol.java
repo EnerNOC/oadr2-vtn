@@ -22,9 +22,9 @@ import org.jivesoftware.smack.packet.PacketExtension;
 
 import play.Logger;
 import service.XmppService;
-import test.JAXBManager;
-import test.OADR2IQ;
-import test.OADR2PacketExtension;
+import xmpp.JAXBManager;
+import xmpp.OADR2IQ;
+import xmpp.OADR2PacketExtension;
 
 public class XMPPProtocol extends BaseProtocol{    
     

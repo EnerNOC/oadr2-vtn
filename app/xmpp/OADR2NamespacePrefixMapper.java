@@ -1,4 +1,4 @@
-package test;
+package xmpp;
 
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;

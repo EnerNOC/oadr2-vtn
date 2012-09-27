@@ -1,4 +1,4 @@
-package test;
+package xmpp;
 
 import javax.xml.bind.JAXBException;
 

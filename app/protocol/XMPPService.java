@@ -15,7 +15,7 @@ import org.jivesoftware.smack.packet.Packet;
 import play.Logger;
 
 import service.EiEventService;
-import test.OADR2PacketExtension;
+import xmpp.OADR2PacketExtension;
 
 public class XMPPService implements ConnectionListener, PacketListener, PacketFilter{
     

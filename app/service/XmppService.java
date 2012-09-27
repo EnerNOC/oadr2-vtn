@@ -6,7 +6,7 @@ import java.util.List;
 import play.Logger;
 import play.db.jpa.Transactional;
 import tasks.EventPushTask;
-import test.*;
+import xmpp.*;
 
 
 import javax.persistence.EntityManager;

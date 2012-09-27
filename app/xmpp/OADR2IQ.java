@@ -1,4 +1,4 @@
-package test;
+package xmpp;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.PacketExtension;

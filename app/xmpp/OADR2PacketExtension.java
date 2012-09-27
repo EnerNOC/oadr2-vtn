@@ -1,4 +1,4 @@
-package test;
+package xmpp;
 
 import java.io.StringWriter;
 
