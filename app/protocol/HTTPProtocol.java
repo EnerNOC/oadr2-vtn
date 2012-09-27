@@ -1,6 +1,7 @@
 package protocol;
 
 import java.util.Date;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
@@ -17,7 +18,6 @@ import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 
 import play.Logger;
-//http://www.yelp.com/biz/cambridge-family-ymca-cambridge
 
 //TODO Need to find out if whether or not "send" for HTTP is appropriate, since a POST using CURL won't return a response
 //doing it this way, perhaps look at the response() 
@@ -124,7 +124,7 @@ public class HTTPProtocol extends BaseProtocol{
         }
     }
     
-    public static void createNewEm(){
+    public void createNewEm(){
         entityManager = entityManagerFactory.createEntityManager();
         if(!entityManager.getTransaction().isActive()){
             entityManager.getTransaction().begin();

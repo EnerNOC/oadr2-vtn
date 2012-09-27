@@ -2,6 +2,9 @@ package xmpp;
 
 import javax.xml.bind.JAXBException;
 
+import jaxb.JAXBManager;
+import jaxb.PullUnmarshaller;
+
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.provider.IQProvider;

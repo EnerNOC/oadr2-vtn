@@ -1,4 +1,4 @@
-package xmpp;
+package jaxb;
 // Original source can be found at:
 // http://java.net/projects/jaxb/sources/version1/content/trunk/jaxb-ri/samples/samples-src/pull-parser/src/PullUnmarshaller.java?rev=203
 

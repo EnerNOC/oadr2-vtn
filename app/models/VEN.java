@@ -11,13 +11,12 @@ import play.data.validation.Constraints.Required;
 @Table(name="CUSTOMERS")
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class VEN{
-	
-	public String programName;
-		
+			
 	@Required(message = "Must enter a valid VEN ID")
 	@Column(name = "VENID")
 	private String venID;
 	
+	//Must allow for multiple vens
 	@Required(message = "Must select a Program")
 	@Column(name = "PROGRAMID")
 	private String programId;

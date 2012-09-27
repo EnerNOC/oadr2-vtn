@@ -1,4 +1,4 @@
-package xmpp;
+package jaxb;
 
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;

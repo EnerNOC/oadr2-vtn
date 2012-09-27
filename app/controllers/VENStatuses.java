@@ -15,6 +15,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import service.*;
+import service.oadr.EiEventService;
 
 public class VENStatuses extends Controller{
     

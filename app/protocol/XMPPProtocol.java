@@ -7,6 +7,8 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.xml.bind.JAXBException;
 
+import jaxb.JAXBManager;
+
 import models.VEN;
 
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -16,23 +18,22 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.PacketExtension;
 
 import play.Logger;
 import service.XmppService;
-import xmpp.JAXBManager;
 import xmpp.OADR2IQ;
 import xmpp.OADR2PacketExtension;
 
+import com.google.inject.Inject;
+
 public class XMPPProtocol extends BaseProtocol{    
     
-    XMPPService service = XMPPService.getInstance();    
+    @Inject static XmppService xmppService;// = XmppService.getInstance();    
+    
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
-    XMPPConnection connection;
-    
+    XMPPConnection connection;    
     
     public XMPPProtocol(){
         this.setProtocolType(ProtocolType.XMPP);
@@ -70,12 +71,6 @@ public class XMPPProtocol extends BaseProtocol{
     
     @Override
     public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent) {
-        try {
-            service.connect();
-        } catch (XMPPException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
 
     @Override

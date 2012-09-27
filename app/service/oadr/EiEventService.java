@@ -1,17 +1,13 @@
-package service;
+package service.oadr;
 
-import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 
 import models.VEN;
 import models.VENStatus;
@@ -27,7 +23,6 @@ import org.enernoc.open.oadr2.model.ResponseCode;
 
 import play.Logger;
 import play.db.jpa.Transactional;
-import play.mvc.Result;
 
 public class EiEventService{
 
@@ -35,84 +30,83 @@ public class EiEventService{
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
 
     public EiEventService(){
+        
     }
     
-    //change to handle xxxx oadrpayload
-    public static Result handleOadrPayload(Object o) throws JAXBException{
+    //CHange to return Object instead of result
+    public Object handleOadrPayload(Object o){
         if(o instanceof OadrRequestEvent){
             //cast to a request event before passing to send()
-            return sendDistributeFromRequest(o);
+            return handleOadrRequest((OadrRequestEvent)o);
         }
         else if(o instanceof OadrCreatedEvent){
             return handleOadrCreated((OadrCreatedEvent)o);
         }
         else if(o instanceof OadrResponse){
             persistFromResponse((OadrResponse)o);
-            return play.mvc.Action.ok();
+            return null;
         }
         else{
+            //TODO find out what to return if an http payload is of an incorrect type, probably http status code
             //move to controller for http specific, have it throw Exception
-            return play.mvc.Action.badRequest("Object was not of correct class");
+            throw new RuntimeException("Object was not of correct class");
         }
     }    
     
     @Transactional
-    public static Result handleOadrCreated(OadrCreatedEvent oadrCreatedEvent) throws JAXBException{
+    public static EiResponse handleOadrCreated(OadrCreatedEvent oadrCreatedEvent){
         persistFromCreatedEvent(oadrCreatedEvent);
         createNewEm();
         entityManager.persist(oadrCreatedEvent);
         entityManager.getTransaction().commit();
         
-        EiResponse eiResponse = new EiResponse()        
+        return new EiResponse()        
             //TODO Need to handle non 200 responses
             .withResponseCode(new ResponseCode("200"))
             .withResponseDescription("Optional description!"); 
-        
-        return play.mvc.Action.ok(marshalObject(eiResponse));
     }
     
+    @SuppressWarnings("unchecked")
     @Transactional
-    public static Result sendDistributeFromRequest(Object o) throws JAXBException{
-        OadrRequestEvent oRequestEvent = (OadrRequestEvent) o;
+    public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
         EiResponse eiResponse = new EiResponse(); 
-        if(oRequestEvent.getEiRequestEvent().getRequestID() != null){
-            eiResponse.setRequestID(oRequestEvent.getEiRequestEvent().getRequestID());
+        if(oadrRequestEvent.getEiRequestEvent().getRequestID() != null){
+            eiResponse.setRequestID(oadrRequestEvent.getEiRequestEvent().getRequestID());
         }
         
         //TODO Need to handle non 200 responses
         eiResponse.setResponseCode(new ResponseCode("200"));        
         createNewEm();
-        entityManager.persist(oRequestEvent);  
+        entityManager.persist(oadrRequestEvent);  
         entityManager.getTransaction().commit();        
-        persistFromRequestEvent(oRequestEvent);    
-        OadrDistributeEvent response = new OadrDistributeEvent().withEiResponse(eiResponse);
+        persistFromRequestEvent(oadrRequestEvent);    
+        OadrDistributeEvent oadrDistributeEvent = new OadrDistributeEvent()
+                .withEiResponse(eiResponse)
+                .withRequestID(eiResponse.getRequestID());
         
-        String eventId = null;
-        EiEvent event = null;
-        
-        try{
-            eventId = (String)entityManager.createQuery("SELECT s.eventID FROM StatusObject s WHERE s.venID = :ven")
-                .setParameter("ven", oRequestEvent.getEiRequestEvent().getVenID())
+        try {
+            VEN ven = (VEN) entityManager.createQuery("SELECT ven FROM Vens v WHERE ven.venID = :ven")
+                .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();        
             
-            event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
-                    "descriptor WHERE descriptor.eventID = :id and event.hjid = descriptor.hjid")
-                    .setParameter("id", eventId)
-                    .getSingleResult();   
+            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
+                    "descriptor WHERE descriptor.marketContext = :market")
+                    .setParameter("id", ven.getProgramId())
+                    .getResultList();
+            List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             
-        }catch(NoResultException e){e.printStackTrace();};
-        response.withOadrEvents(new OadrEvent().withEiEvent(event));
-        response.withRequestID(eiResponse.getRequestID());
-        return play.mvc.Action.ok(marshalObject(response));
-    }
-    
-    public static String marshalObject(Object o) throws JAXBException{  
-        JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");    
-        Marshaller marshaller = jaxbContext.createMarshaller();      
-        StringWriter sw = new StringWriter();
-        marshaller.marshal(o, sw);
-        play.mvc.Controller.response().setContentType("application/xml");
-        return sw.toString() + '\n';
+            for(EiEvent e : events){
+                oadrEvents.add(new OadrEvent().withEiEvent(e));
+            }
+            
+            oadrDistributeEvent.withOadrEvents(oadrEvents);        
+        }        
+        catch (NoResultException e) {
+            //TODO add error checking
+            Logger.warn("Could not find VEN. Query was for " + oadrRequestEvent.getEiRequestEvent().getVenID(), e);
+            
+        }
+        return oadrDistributeEvent;
     }
         
     @SuppressWarnings("unchecked")
@@ -136,7 +130,6 @@ public class EiEventService{
         EiEvent event = null;
         createNewEm();
         
-        //TODO Change this to throw an exception then catch it and return a 500/400 error
         customer = (VEN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();
@@ -166,7 +159,9 @@ public class EiEventService{
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                     .getSingleResult();
-        }catch(Exception e){Logger.warn("Caught exception, either NoResult or NonUnique from persistFromCreatedEvent() in EiEventService");};
+        }catch(Exception e){
+            e.printStackTrace();
+        };
         if(status != null){
             status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getOptType().toString());
             status.setTime(new Date());
@@ -191,17 +186,9 @@ public class EiEventService{
             createNewEm();
             entityManager.merge(status);
             entityManager.getTransaction().commit();
-        }        
+        }
     }
-    
-    public static Object unmarshalRequest(byte[] chars) throws JAXBException{    
-        JAXBContext jaxbContext = JAXBContext.newInstance("org.enernoc.open.oadr2.model");
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        Logger.info(new String(chars));
-        Object o = unmarshaller.unmarshal(new ByteArrayInputStream(chars));
-        return o;
-    }
-    
+        
     public static void createNewEm(){
         entityManager = entityManagerFactory.createEntityManager();
         if(!entityManager.getTransaction().isActive()){

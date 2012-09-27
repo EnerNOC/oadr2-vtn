@@ -66,7 +66,6 @@ public class Events extends Controller {
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
     	  Collections.sort(eiEvents, new EiEventComparator());
     	  for(EiEvent e : eiEvents){
-    	      Logger.info("postPersist is: " + e.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
     	      updateStatus(e);
     	  }
     	  

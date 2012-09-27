@@ -6,6 +6,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import jaxb.JAXBManager;
+
 import org.jivesoftware.smack.packet.PacketExtension;
 
 public class OADR2PacketExtension implements PacketExtension {

@@ -11,7 +11,7 @@ import play.Logger;
 
 import service.PushService;
 import service.XmppService;
-import service.EiEventService;
+import service.oadr.EiEventService;
 
 public class Dependencies {
   
