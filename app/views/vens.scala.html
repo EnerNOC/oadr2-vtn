@@ -4,7 +4,7 @@
 
 @import helper.twitterBootstrap._
 
-@main(Html("VENs"), "Customers") {
+@main(Html("VENs"), "VENs") {
 
 		@if(flash.containsKey("success")) {
 		        <div class="alert-message success">
@@ -20,7 +20,7 @@
         <table class="zebra-striped">
             <thead>
                 <tr>      
-                	<th>Customer Name</th>
+                	<th>VEN Name</th>
                 	<th>VEN ID</th>
                 	<th>Client URI</th>
                 	<th>Program Name</th>
@@ -31,11 +31,11 @@
             <tbody>
             @for(customer <- customerList){ 
             	<tr>
-            		<td>@customer.getCustomerName()</td>
+            		<td>@customer.getVenName()</td>
 	            	<td>@customer.getVenID()</td>
 	            	<td>@customer.getClientURI()</td>
 	            	<td>@customer.getProgramId()</td>	            	
-					<td>@form(routes.Customers.deleteCustomer(customer.getId())){
+					<td>@form(routes.VENs.deleteVEN(customer.getId())){
 							<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 						}
 					</td>

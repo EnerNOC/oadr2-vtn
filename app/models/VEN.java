@@ -7,8 +7,8 @@ import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
 
-@Entity(name="Customers")
-@Table(name="CUSTOMERS")
+@Entity(name="VEN")
+@Table(name="VEN")
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class VEN{
 			
@@ -21,8 +21,8 @@ public class VEN{
 	@Column(name = "PROGRAMID")
 	private String programId;
 	
-	@Column(name = "CUSTOMERNAME")
-	private String customerName;
+	@Column(name = "VENNAME")
+	private String venName;
 	
 	@Column(name = "CLIENTURI")
 	private String clientURI;
@@ -61,12 +61,12 @@ public class VEN{
 		this.id = id;
 	}
 	
-    public String getCustomerName() {
-        return customerName;
+    public String getVenName() {
+        return venName;
     }
 
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
+    public void setVenName(String customerName) {
+        this.venName = customerName;
     }
 
     public String getClientURI() {

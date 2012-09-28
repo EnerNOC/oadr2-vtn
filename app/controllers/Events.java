@@ -201,7 +201,7 @@ public class Events extends Controller {
       
       @SuppressWarnings("unchecked")
       public static List<VEN> getVENs(EiEvent e){
-          return JPA.em().createQuery("SELECT c from Customers c WHERE c.programId = :program and c.clientURI != ''")
+          return JPA.em().createQuery("SELECT c from VEN c WHERE c.programId = :program and c.clientURI != ''")
                   .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
                   .getResultList();
       }

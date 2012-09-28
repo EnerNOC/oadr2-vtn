@@ -50,7 +50,6 @@ public class Event{
 	public String endDate;
 	@Required(message = ("Must enter an End Time"))
 	public String endTime;	
-	//@Required(message = ("Must enter a Signal ID"))
 	public String signalID = "0";
 	@Required(message = ("Must select a program, if one is not available please create one."))
 	public String marketContext;

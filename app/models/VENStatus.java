@@ -11,8 +11,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity(name = "StatusObject")
-@Table(name = "STATUSOBJECT")
+@Entity(name = "VENStatus")
+@Table(name = "VENSTATUS")
 public class VENStatus {
 	
 	@Id 

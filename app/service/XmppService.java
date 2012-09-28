@@ -51,14 +51,11 @@ public class XmppService {
         
     public XmppService() throws XMPPException, InstantiationException, IllegalAccessException, JAXBException{
         //Add for debugging
-        //
         //Connection.DEBUG_ENABLED = true;
         if(vtnConnection == null){
             vtnConnection = connect(vtnUsername, vtnPassword, "vtn");
         }
         
-        //testConnection = connect("test", "xmpp-pass", "vtn");        
-
         JAXBManager jaxb = new JAXBManager();
         marshaller = jaxb.createMarshaller();
     }
@@ -70,23 +67,19 @@ public class XmppService {
                     try {
                         instance = new XmppService();
                     } catch (XMPPException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Logger.error("XMPPException creating XMPPService.", e);
                     } catch (InstantiationException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Logger.error("InstantiationException creating XMPPService.", e);
                     } catch (IllegalAccessException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Logger.error("IllegalAccessException creating XMPPService.", e);
                     } catch (JAXBException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Logger.error("JAXBException creating XMPPService.", e);
                     }
                 }
             }
         }
         return instance;
-    }//
+    }
     
     public XmppService(String username, String password){
         this.vtnUsername = username;

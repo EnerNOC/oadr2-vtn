@@ -4,7 +4,7 @@ import javax.persistence.*;
 import play.data.validation.Constraints.Required;
 
 @Entity(name="Program")
-@Table(name="PROJECT")
+@Table(name="PROGRAMS")
 //@Inheritance(strategy = InheritanceType.JOINED)
 public class Program{
 	

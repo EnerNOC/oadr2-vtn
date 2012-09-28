@@ -1,15 +1,16 @@
 package controllers;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
 
 import javax.persistence.Persistence;
 
 import models.Program;
 import models.VEN;
+import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -19,45 +20,46 @@ import play.mvc.Result;
 
 //export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
 
-public class Customers extends Controller {	
+public class VENs extends Controller {	
 
 	public static Result index() {
-		  return redirect(routes.Customers.customers());
+		  return redirect(routes.VENs.vens());
 	}
 
 	@SuppressWarnings("unchecked")
 	@Transactional
-	public static Result customers(){
-		  List<VEN> customers = JPA.em().createQuery("FROM Customers").getResultList();
+	public static Result vens(){
+		  List<VEN> vens = JPA.em().createQuery("FROM VEN").getResultList();
 		  		  
-		  class CustomerFormComparator implements Comparator<VEN>{
+		  class VENFormComparator implements Comparator<VEN>{
 				public int compare(VEN userOne, VEN userTwo){
 					return userOne.getVenID().compareTo(userTwo.getVenID());
 				}
 			}
 		  
-		  Collections.sort(customers, new CustomerFormComparator());
-		  return ok(views.html.customers.render(customers));
+		  Collections.sort(vens, new VENFormComparator());
+		  return ok(views.html.vens.render(vens));
 	}
 	
-	public static Result blankCustomer(){
-		return ok(views.html.newCustomer.render(form(VEN.class), makeProgramMap()));
+	public static Result blankVEN(){
+		return ok(views.html.newVEN.render(form(VEN.class), makeProgramMap()));
 	}
 	
 	@Transactional
-	public static Result newCustomer(){
+	public static Result newVEN(){
 		  Form<VEN> filledForm = form(VEN.class).bindFromRequest();
 		  if(filledForm.hasErrors()){
 	    	  addFlashError(filledForm.errors());
-			  return badRequest(views.html.newCustomer.render(filledForm, makeProgramMap()));
+			  return badRequest(views.html.newVEN.render(filledForm, makeProgramMap()));
 		  }
 		  else{
-			  VEN newCustomer = filledForm.get();
-			  newCustomer.setProgramId(JPA.em().find(Program.class, Long.parseLong(newCustomer.getProgramId())).getProgramName());
-			  JPA.em().persist(newCustomer);
-			  flash("success", "Customer as been created");
+			  VEN newVEN = filledForm.get();
+			  Logger.info("Program id is: " + newVEN.getProgramId());
+			  newVEN.setProgramId(JPA.em().find(Program.class, Long.parseLong(newVEN.getProgramId())).getProgramName());
+			  JPA.em().persist(newVEN);
+			  flash("success", "VEN as been created");
 		  }
-		  return redirect(routes.Customers.customers());
+		  return redirect(routes.VENs.vens());
 	}
 	
 	//@Transactional
@@ -76,10 +78,10 @@ public class Customers extends Controller {
 	}
 	
 	  @Transactional
-	  public static Result deleteCustomer(Long id){
+	  public static Result deleteVEN(Long id){
 		  JPA.em().remove(JPA.em().find(VEN.class, id));
-	      flash("success", "Customer has been deleted");
-	      return redirect(routes.Customers.customers());
+	      flash("success", "VEN has been deleted");
+	      return redirect(routes.VENs.vens());
 	  }
 	
 	  public static void addFlashError(Map<String, List<ValidationError>> errors){

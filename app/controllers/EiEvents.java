@@ -1,4 +1,4 @@
-package controllers.oadr;
+package controllers;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,6 +8,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import jaxb.JAXBManager;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -24,24 +25,30 @@ import com.google.inject.Inject;
 public class EiEvents extends Controller{
     
 
-    static JAXBContext jaxbContext;
+    static JAXBManager jaxbManager;
     static{
         try {
-            JAXBContext.newInstance("org.enernoc.open.oadr2.model");
+            jaxbManager = new JAXBManager("org.enernoc.open.oadr2.model");
         } catch (JAXBException e) {
-            Logger.warn("Exception thrown creating JAXBContext instance.", e);
+            Logger.error("Could not initialize JAXBManager in EiEvents", e);
         }
     }
     
-    @Inject static EiEventService eiEventService;
+    static EiEventService eiEventService = EiEventService.getInstance();
 
     @Transactional
     //convert to XML from eiEventService
     public static Result sendHttpResponse() throws JAXBException{
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        /*
+        if( jaxbManager == null ) {
+            Logger.info("jaxbContext is null");
+        }
+        */
+        Unmarshaller unmarshaller = jaxbManager.getContext().createUnmarshaller();
         Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(request().body().asRaw().asBytes()));
+        //Logger.info("Payload is: " + payload.toString());
         Object eiResponse = eiEventService.handleOadrPayload(payload);
-        Marshaller marshaller = jaxbContext.createMarshaller();
+        Marshaller marshaller = jaxbManager.createMarshaller();
         
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         marshaller.marshal(eiResponse, outputStream);

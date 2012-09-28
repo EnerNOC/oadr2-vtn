@@ -13,6 +13,7 @@ import models.VEN;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
+import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
@@ -23,17 +24,31 @@ import org.enernoc.open.oadr2.model.ResponseCode;
 
 import play.Logger;
 import play.db.jpa.Transactional;
+import service.XmppService;
 
 public class EiEventService{
 
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
 
+    private volatile static EiEventService instance = null;
+    
     public EiEventService(){
         
     }
     
-    //CHange to return Object instead of result
+    public static EiEventService getInstance(){
+        if(instance == null){
+            synchronized(XmppService.class){
+                if(instance == null){
+                    instance = new EiEventService();
+                }
+            }
+        }
+        return instance;
+    }
+    
+    //Change to return Object instead of result
     public Object handleOadrPayload(Object o){
         if(o instanceof OadrRequestEvent){
             //cast to a request event before passing to send()
@@ -136,8 +151,8 @@ public class EiEventService{
                   
         venStatus.setProgram(customer.getProgramId());
         
-        event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor$EiMarketContext " +
-                "marketContext WHERE marketContext.marketContext = :market and event.hjid = marketContext.hjid")
+        event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
+                "marketContext WHERE marketContext.marketContext.value = :market and event.hjid = marketContext.hjid")
                 .setParameter("market", venStatus.getProgram())
                 .getSingleResult();
                 

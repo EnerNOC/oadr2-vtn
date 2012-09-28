@@ -38,12 +38,12 @@ public class VENStatuses extends Controller{
 	    List<VENStatus> listStatusObjects;
 	    if(program != null){
 	        listStatusObjects = JPA.em().createQuery("SELECT status " +
-	                "FROM StatusObject status WHERE status.eventID = :event")
+	                "FROM VENStatus status WHERE status.eventID = :event")
 	                .setParameter("event", program)
 	                .getResultList();
 	    }
         else{
-            listStatusObjects = JPA.em().createQuery("FROM StatusObject").getResultList();
+            listStatusObjects = JPA.em().createQuery("FROM VENStatus").getResultList();
         }
 	    
 		class StatusObjectComparator implements Comparator<VENStatus>{
@@ -66,11 +66,5 @@ public class VENStatuses extends Controller{
 	public static Result deleteStatus(String program, Long id){
 	    JPA.em().remove(JPA.em().find(VENStatus.class, id));
 	    return redirect(routes.VENStatuses.venStatuses(program));
-	}
-	
-	@Transactional
-	public static Result sendHttpResponse() throws JAXBException{
-	    return(eiEventService.handleOadrPayload(
-	            eiEventService.unmarshalRequest(request().body().asRaw().asBytes())));
 	}
 }

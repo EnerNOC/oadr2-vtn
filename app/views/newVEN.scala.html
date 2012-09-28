@@ -18,23 +18,23 @@
        </div> 
     }
 	
-	@form(routes.Customers.newCustomer()) {
+	@form(routes.VENs.newVEN()) {
 	
         <fieldset>
 		    <!-- will eventually generate this ID -->
-		    <h3>Customer Information</h3>   
+		    <h3>VEN Information</h3>   
 				@select(
                 	userForm("ProgramId"), 
                 	options(programs), 
 	                '_label -> "Program", '_default -> "-- Choose a program --",
 	                '_showConstraints -> false
 	            )
-		    	@inputText(userForm("customerName"), '_label -> "Customer Name")
+		    	@inputText(userForm("venName"), '_label -> "VEN Name")
 				@inputText(userForm("venID"), '_label -> "VEN ID")
 				@inputText(userForm("clientURI"), '_label -> "Client URI")
 	            <div class="actions">
-	            	<input type="submit" value="Create this customer" class="btn primary"> or 
-	            	<a href="@routes.Customers.customers()" class="btn">Cancel</a>
+	            	<input type="submit" value="Create this ven" class="btn primary"> or 
+	            	<a href="@routes.VENs.vens()" class="btn">Cancel</a>
         		</div>
 		</fieldset>
 	}
