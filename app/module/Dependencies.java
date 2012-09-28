@@ -1,17 +1,15 @@
 package module;
 
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-
 import javax.xml.bind.JAXBException;
 
 import org.jivesoftware.smack.XMPPException;
 
-import play.Logger;
-
 import service.PushService;
 import service.XmppService;
 import service.oadr.EiEventService;
+
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 public class Dependencies {
   

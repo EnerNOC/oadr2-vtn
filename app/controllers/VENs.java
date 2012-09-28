@@ -18,8 +18,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-//export PATH=$PATH:/Users/jlajoie/Documents/play-2.0.1
-
 public class VENs extends Controller {	
 
 	public static Result index() {
@@ -54,7 +52,6 @@ public class VENs extends Controller {
 		  }
 		  else{
 			  VEN newVEN = filledForm.get();
-			  Logger.info("Program id is: " + newVEN.getProgramId());
 			  newVEN.setProgramId(JPA.em().find(Program.class, Long.parseLong(newVEN.getProgramId())).getProgramName());
 			  JPA.em().persist(newVEN);
 			  flash("success", "VEN as been created");
@@ -63,12 +60,9 @@ public class VENs extends Controller {
 	}
 	
 	//@Transactional
-	//gives stupid "Try marking with @Transactional" error, yeah, it kinda was, kinda didnt work anyways
 	@SuppressWarnings("unchecked")
     public static Map<String, String> makeProgramMap(){
-	    //What the f this works but JPA.em() doesn't? ya okay sweet bro
 	    List<Program> programList = Persistence.createEntityManagerFactory("Events").createEntityManager().createQuery("FROM Program").getResultList();
-		//List<Program> programList = JPA.em().createQuery("FROM Program").getResultList();
 		Map<String, String> programMap = new HashMap<String, String>();
 		for(Program program : programList){
 			programMap.put(program.getId() + "", program.getProgramName());

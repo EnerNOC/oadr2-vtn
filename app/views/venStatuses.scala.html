@@ -30,13 +30,16 @@
 							$(".refreshing").remove();
 				});
 			};
+
+			$('#refresh').click(function(){
+				$(this).text("Loading Status...");
 				loadOadrEvents();
-				$('#Statusbutton').click(function(){
-					$(this).text("Loading Status...");
-					loadOadrEvents();
-					$(this).text("Refresh");
-				});
-				setInterval(loadOadrEvents, 30000);
+				$(this).text("Refresh");
+			});
+
+			loadOadrEvents();
+						
+			setInterval(loadOadrEvents, 30000);
 		});	
 	</script>
 }

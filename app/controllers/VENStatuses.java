@@ -3,19 +3,23 @@ package controllers;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.xml.bind.JAXBException;
-import com.google.inject.Inject;
+
 import models.VENStatus;
+
 import org.enernoc.open.oadr2.model.EiEvent;
+
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import service.*;
+import service.XmppService;
 import service.oadr.EiEventService;
+
+import com.google.inject.Inject;
 
 public class VENStatuses extends Controller{
     

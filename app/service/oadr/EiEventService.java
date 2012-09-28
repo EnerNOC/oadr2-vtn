@@ -13,7 +13,6 @@ import models.VEN;
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
-import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
@@ -100,13 +99,13 @@ public class EiEventService{
                 .withRequestID(eiResponse.getRequestID());
         
         try {
-            VEN ven = (VEN) entityManager.createQuery("SELECT ven FROM Vens v WHERE ven.venID = :ven")
+            VEN ven = (VEN) entityManager.createQuery("FROM VEN v WHERE v.venID = :ven")
                 .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();        
             
-            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event, EiEvent$EventDescriptor " +
-                    "descriptor WHERE descriptor.marketContext = :market")
-                    .setParameter("id", ven.getProgramId())
+            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
+                    "descriptor WHERE descriptor.marketContext.value = :market")
+                    .setParameter("market", ven.getProgramId())
                     .getResultList();
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             
@@ -130,7 +129,7 @@ public class EiEventService{
         createNewEm();
         VENStatus venStatus = null;
         try{
-            venStatus = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
+            venStatus = (VENStatus)entityManager.createQuery("SELECT status FROM VENStatus " +
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                     .getSingleResult();
@@ -145,7 +144,7 @@ public class EiEventService{
         EiEvent event = null;
         createNewEm();
         
-        customer = (VEN)entityManager.createQuery("SELECT c FROM Customers c WHERE c.venID = :ven")
+        customer = (VEN)entityManager.createQuery("SELECT c FROM VEN c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();
                   

@@ -30,7 +30,6 @@ import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.MarketContext;
 
-import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -54,7 +53,7 @@ public class Events extends Controller {
       }
       
       // requests page, displays all events currently in the database
-      @SuppressWarnings("unchecked") //FFFFUUUU DOESN'T SUPPRESS THE WARNING
+      @SuppressWarnings("unchecked")
       @Transactional
       public static Result events(){
     	  class EiEventComparator implements Comparator<EiEvent>{
@@ -91,15 +90,12 @@ public class Events extends Controller {
     		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(new MarketContext(contextName)));
     		  newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().setValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
-    		  Logger.info("prePersist is: " + newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().toString());
     		  JPA.em().persist(newEvent);	      		  
-    		  flash("success", "Event as been created");    		  
-    		  //pushservice.handlenewevent(newevent list<vens>)
+    		  flash("success", "Event as been created");
     		  List<VEN> vens = getVENs(newEvent);
     		  populateFromPush(newEvent);
     		  pushService.pushNewEvent(newEvent, vens);
     		  return redirect(routes.VENStatuses.venStatuses(newEvent.getEventDescriptor().getEventID()));
-    		  //return redirect(routes.Events.newEvent());		  
     	  }
       }
       
@@ -129,7 +125,6 @@ public class Events extends Controller {
       @Transactional
       public static Result editEvent(Long id){
     	  Event form = new Event(JPA.em().find(EiEvent.class, id));
-    	  //form.marketContext = getRelationFromEvent(id).getProgramId() + "";
     	  return ok(views.html.editEvent.render(id, form(Event.class).fill(form), form, makeProgramMap()));
       }
     
