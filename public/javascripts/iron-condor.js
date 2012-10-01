@@ -9,7 +9,6 @@ $("select[name='program']").change(function(){
 	location.href= $(this).val();
 });
 
-
 $(function(){
 	$('#dp1').datepicker({
 		format: 'mm-dd-yyyy'
@@ -27,4 +26,11 @@ function confirmSubmit(){
 		return true;
 	else
 		return false;
+}
+
+function enableField(){
+	document.getElementById("clientURI").disabled=false
+}
+function disableField(){
+	document.getElementById("clientURI").disabled=true
 }

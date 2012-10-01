@@ -31,11 +31,29 @@
 	            )
 		    	@inputText(userForm("venName"), '_label -> "VEN Name")
 				@inputText(userForm("venID"), '_label -> "VEN ID")
-				@inputText(userForm("clientURI"), '_label -> "Client URI")
+					
+				<div class="clearfix">
+					<label>Node Type</label>
+					<div class="input">
+						<input type="radio" name="group1" value="Pull" id="Pull" checked onclick="disableField()">Pull &nbsp&nbsp
+						<input type="radio" name="group1" value="Push" id="Push" onclick="enableField()">Push<br>
+					</div>
+				</div>
+				@inputText(userForm("clientURI"), '_label -> "Client URI", 'disabled -> "disabled")
+				
 	            <div class="actions">
-	            	<input type="submit" value="Create this ven" class="btn primary"> or 
+	            	<input type="submit" value="Create this VEN" class="btn primary"> or 
 	            	<a href="@routes.VENs.vens()" class="btn">Cancel</a>
         		</div>
 		</fieldset>
 	}
+	
+	<script>
+		function enableField(){
+			document.getElementById("clientURI").disabled=false
+		}
+		function disableField(){
+			document.getElementById("clientURI").disabled=true
+		}
+	</script>
 }
