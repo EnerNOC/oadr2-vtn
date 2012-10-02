@@ -87,7 +87,7 @@ public class Events extends Controller {
     	  else{		  
     		  Event newEventForm = filledForm.get();
     		  EiEvent newEvent = newEventForm.toEiEvent();
-    		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.marketContext)).getProgramName();
+    		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
     		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(new MarketContext(contextName)));
     		  newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().setValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
     		  JPA.em().persist(newEvent);	      		  

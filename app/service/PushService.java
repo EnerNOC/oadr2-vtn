@@ -30,10 +30,6 @@ public class PushService{
         threadPool.prestartAllCoreThreads();
     }
     
-    public void provide(EventPushTask task){
-        queue.add(task);
-    }
-    
     @Transactional
     public void pushNewEvent(EiEvent e, List<VEN> vens) throws JAXBException{       
         for(VEN v : vens){

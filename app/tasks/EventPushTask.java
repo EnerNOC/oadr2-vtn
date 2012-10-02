@@ -2,28 +2,31 @@ package tasks;
 
 import java.util.Random;
 
-import org.enernoc.open.oadr2.model.OadrDistributeEvent;
+import org.enernoc.open.oadr2.model.OadrResponse;
 
-import play.Logger;
-
+import protocol.IProtocol;
+import protocol.ProtocolRegistry;
 import service.XmppService;
 
 public class EventPushTask implements Runnable{
     
 
-    OadrDistributeEvent distributeEvent = null;
-    String jid = null;
-    XmppService xmppService = XmppService.getInstance();
+    Object oadrObject = null;
+    String uri = null;
+    String pid = null;
     
-    public EventPushTask(String jid, OadrDistributeEvent distributeEvent){
-        this.distributeEvent = distributeEvent;
+    XmppService xmppService = XmppService.getInstance();
+    ProtocolRegistry protocolRegistry = ProtocolRegistry.getInstance();
+    
+    public EventPushTask(String uri, Object oadrObject){
+        this.oadrObject = oadrObject;
         //switch to uri
-        this.jid = jid;
+        this.uri = uri;
     }
 
     @Override
     public void run() {
-        //Logger.info("Running event for jid: " + jid + " - " + System.currentTimeMillis());
+        //Logger.info("Running event for uri: " + uri + " - " + System.currentTimeMillis());
         Random r = new Random();
         try {
             Thread.sleep(r.nextInt(3000) + 1000);
@@ -32,11 +35,11 @@ public class EventPushTask implements Runnable{
             e.printStackTrace();
         }
         //if else for protocol type
-        xmppService.sendObjectToJID(distributeEvent, jid);
-        
-        //TODO Write the method to persist to the database and get the send information ready
-        //ex call a send for the JID with the message contained, might need to add the contained message for
-        //it to be appropriate, will also need to access the XMPPConnection so might need to make that injected or a singleton
+        IProtocol protocol = protocolRegistry.getProtocol(uri);
+        if(pid != null){
+            protocol.send(uri, (OadrResponse)oadrObject, pid);
+        }
+        protocolRegistry.getProtocol(uri).send(uri, oadrObject);
     }
 
 }

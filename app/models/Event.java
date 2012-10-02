@@ -28,31 +28,28 @@ import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.Properties;
 
-import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
 
 public class Event{
 	
 	@Required(message = "Must enter an Event ID")
-	public String eventID;
+	private String eventID;
 	@Required(message = "Must enter a Priority")
 	@Min(message = "Priority must be greater than zero", value = 0)
 	@Valid
-	public long priority;
-	//@Required(message = "Must select a status")
-	public String status = "none";
+	private long priority;
+	private String status = "none";
 	@Required(message = "Must enter a Start Date")
-	public String startDate;
+	private String startDate;
 	@Required(message = ("Must enter a Start Time"))
-	public String startTime;	
+	private String startTime;	
 	@Required(message = ("Must enter an End Date"))
-	public String endDate;
+	private String endDate;
 	@Required(message = ("Must enter an End Time"))
-	public String endTime;	
-	public String signalID = "0";
+	private String endTime;	
 	@Required(message = ("Must select a program, if one is not available please create one."))
-	public String marketContext;
+	private String marketContext;
 	
 	
 	private String duration;	
@@ -81,7 +78,6 @@ public class Event{
 		//TODO This line below could be a bit picky come time for Edit
 		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString();
 		this.duration = e.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
-		this.signalID = e.getEiEventSignals().getEiEventSignals().get(0).getSignalID();
 		setStartDateTime(this.start);
 		setEndDateTime();
 	}
@@ -124,7 +120,6 @@ public class Event{
 								.withDuration(new DurationPropType(new DurationValue(duration)))))
 	  					.withEiEventSignals(new EiEventSignals()
 	  						.withEiEventSignals(new EiEventSignal()
-	  							.withSignalID(signalID)
 	  							.withIntervals(new Intervals()
   									.withIntervals(new Interval()
   									.withDuration( new DurationPropType(new DurationValue(duration)))))));
@@ -165,7 +160,6 @@ public class Event{
 	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize(); //NEED TO ADD START
 		eiEvent.getEiActivePeriod().getProperties().getDtstart().setDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm));
 		eiEvent.getEiActivePeriod().getProperties().getDuration().setDuration(new DurationValue(this.duration));
-		eiEvent.getEiEventSignals().getEiEventSignals().get(0).setSignalID(this.signalID);
 	}
 	
 	//takes in a string of a date and string of time in specific form
@@ -410,4 +404,68 @@ public class Event{
 	public void convertDateTimeToJoda(){
 	    
 	}
+
+    public String getMarketContext() {
+        return marketContext;
+    }
+
+    public void setMarketContext(String marketContext) {
+        this.marketContext = marketContext;
+    }
+    
+    public String getEventID(){
+        return eventID;
+    }
+    
+    public void setEventID(String eventID) {
+        this.eventID = eventID;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public String getStartDate(){
+        return startDate;
+    }
+    
+    public void setStartDate(String startDate){
+        this.startDate = startDate;
+    }
+    
+    public String getEndDate(){
+        return endDate;
+    }
+    
+    public void setEndDate(String endDate){
+        this.endDate = endDate;
+    }
+    
+    public String getStartTime(){
+        return startDate;
+    }
+    
+    public void setStartTime(String startTime){
+        this.startTime = startTime;
+    }
+    
+    public String getendTime(){
+        return endDate;
+    }
+    
+    public void setendTime(String endTime){
+        this.endTime = endTime;
+    }
+    
+    public long getPriority(){
+        return priority;
+    }
+    
+    public void setPriority(long priority){
+        this.priority = priority;
+    }
 }

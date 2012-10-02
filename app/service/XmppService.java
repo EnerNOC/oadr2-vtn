@@ -123,7 +123,6 @@ public class XmppService {
     }        
     
     public void sendObjectToJID(Object o, String jid){
-        Logger.info("Sending object to - " + jid);
         IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
         iq.setTo(jid);
         iq.setType(IQ.Type.SET);
@@ -131,7 +130,6 @@ public class XmppService {
     }
     
     public void sendObjectToJID(Object o, String jid, String packetId){
-        Logger.info("Sending object to - " + jid);
         IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
         iq.setTo(jid);
         iq.setPacketID(packetId);

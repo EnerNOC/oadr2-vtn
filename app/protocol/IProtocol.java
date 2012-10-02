@@ -15,10 +15,11 @@ public interface IProtocol {
     
     public enum ProtocolType{ XMPP, HTTP }
     //change VEN to a String URI
-    public void send(VEN vtn, OadrResponse oadrResponse);
-    public void send(VEN vtn, EiEvent eiEvent);
-    public void send(VEN vtn, OadrDistributeEvent oadrDistributeEvent);
-    public void send(VEN vtn, OadrCreatedEvent oadrCreatedEvent);
-    public void send(VEN vtn, OadrRequestEvent oadrRequestEvent);
+    public void send(String uri, OadrResponse oadrResponse, String pid);
+    public void send(String uri, EiEvent eiEvent);
+    public void send(String uri, OadrDistributeEvent oadrDistributeEvent);
+    public void send(String uri, OadrCreatedEvent oadrCreatedEvent);
+    public void send(String uri, OadrRequestEvent oadrRequestEvent);
+    public void send(String uri, Object oadrObject);
 
 }

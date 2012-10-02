@@ -10,15 +10,17 @@ import javax.persistence.Persistence;
 
 import models.Program;
 import models.VEN;
-import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import protocol.ProtocolRegistry;
 
 public class VENs extends Controller {	
+    
+    static ProtocolRegistry protocolRegistry = ProtocolRegistry.getInstance();
 
 	public static Result index() {
 		  return redirect(routes.VENs.vens());

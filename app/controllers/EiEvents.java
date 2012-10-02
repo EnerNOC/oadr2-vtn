@@ -36,14 +36,8 @@ public class EiEvents extends Controller{
     @Transactional
     //convert to XML from eiEventService
     public static Result sendHttpResponse() throws JAXBException{
-        /*
-        if( jaxbManager == null ) {
-            Logger.info("jaxbContext is null");
-        }
-        */
         Unmarshaller unmarshaller = jaxbManager.getContext().createUnmarshaller();
         Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(request().body().asRaw().asBytes()));
-        //Logger.info("Payload is: " + payload.toString());
         Object eiResponse = eiEventService.handleOadrPayload(payload);
         Marshaller marshaller = jaxbManager.createMarshaller();
         

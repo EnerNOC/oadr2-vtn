@@ -76,18 +76,5 @@ public class VEN{
     public void setClientURI(String clientURI) {
         this.clientURI = clientURI;
     }
-    
-    //0 is HTTP Pull, 1 is XMPP Push, 2 is HTTP Push
-    public int getVENType(){
-        if(this.clientURI.length() == 0){
-            return 0;
-        }
-        else if(this.clientURI.contains("http")){
-            return 2;
-        }
-        else{
-            return 1;
-        }
-    }
 
 }

@@ -57,7 +57,7 @@ public class EiEventService{
             return handleOadrCreated((OadrCreatedEvent)o);
         }
         else if(o instanceof OadrResponse){
-            persistFromResponse((OadrResponse)o);
+            handleFromOadrResponse((OadrResponse)o);
             return null;
         }
         else{
@@ -185,7 +185,7 @@ public class EiEventService{
         }
     }
     
-    public static void persistFromResponse(OadrResponse response){
+    public static void handleFromOadrResponse(OadrResponse response){
         VENStatus status = null;
         createNewEm();
         try{
