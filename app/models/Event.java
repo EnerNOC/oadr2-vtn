@@ -113,7 +113,8 @@ public class Event{
 	  					.withEventDescriptor(new EventDescriptor()
   							.withEventID(eventID)
   							.withPriority(priority)
-  							.withCreatedDateTime(new DateTime(startDttm)))
+  							.withCreatedDateTime(new DateTime(startDttm))
+  							.withModificationNumber(0))
 	  					.withEiActivePeriod(new EiActivePeriod()
   							.withProperties(new Properties()
 								.withDtstart(new Dtstart(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
@@ -125,24 +126,10 @@ public class Event{
   									.withDuration( new DurationPropType(new DurationValue(duration)))))));
 	}
 	
-	//old toString method used for testing content of the eiEvent
-	public String toString(){
-		String returnString = "";
-		returnString += "\nEventID: " + eiEvent.getEventDescriptor().getEventID() + "\n";
-		returnString += "Priority: " + eiEvent.getEventDescriptor().getPriority() + "\n";
-		returnString += "Status: " + eiEvent.getEventDescriptor().getEventStatus().toString() + "\n";
-		returnString += "Start: " + eiEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString() + "\n";
-		returnString += "Duration: " + eiEvent.getEiActivePeriod().getProperties().getDuration().getDuration() + "\n";
-		returnString += "SignalID: " + eiEvent.getEiEventSignals().getEiEventSignals().get(0).getSignalID() + "";
-		return returnString;		
-	}
-	
-	//gets the eiEvent field
 	public EiEvent getEiEvent(){
 		return this.eiEvent;
 	}
 	
-	//copies an event to a getable eiEvent, with all hjids in tact
 	//sets the values in the getable event to a parameter EiEvent
 	public void copyEvent(EiEvent e){
 		eiEvent = e;
@@ -251,7 +238,7 @@ public class Event{
 			if(startHours > 12){
 				startHours -= 12;
 			}
-		}		
+		}
 		String startHoursString = "";
 		if(startHours < 10){
 			startHoursString = "0" + startHours;

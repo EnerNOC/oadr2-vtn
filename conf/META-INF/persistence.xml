@@ -5,7 +5,7 @@
              
     <persistence-unit name="Events" transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.ejb.HibernatePersistence</provider>
-		<jar-file>lib/oadr2-model-0.1-SNAPSHOT-jar-with-dependencies.jar</jar-file>
+		<jar-file>lib/oadr2-model-0.1-SNAPSHOT.jar</jar-file>
 		<class>org.enernoc.open.oadr2.model.EiEvent</class>
 		<class>models.Program</class>
 		<class>models.VEN</class>
@@ -13,7 +13,7 @@
     	<properties>
            	<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
            	<property name="hibernate.hbm2ddl.auto" value="update"/>
-           	<property name="hibernate.connection.url" value="jdbc:h2:mem:events"/>
+           	<property name="hibernate.connection.url" value="jdbc:h2:~/Events"/>
         </properties>
     </persistence-unit>
     

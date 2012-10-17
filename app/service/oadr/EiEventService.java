@@ -20,6 +20,7 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 import org.enernoc.open.oadr2.model.ResponseCode;
+import org.enernoc.open.oadr2.model.ResponseRequiredType;
 
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -68,36 +69,45 @@ public class EiEventService{
     }    
     
     @Transactional
-    public static EiResponse handleOadrCreated(OadrCreatedEvent oadrCreatedEvent){
+    public static OadrResponse handleOadrCreated(OadrCreatedEvent oadrCreatedEvent){
         persistFromCreatedEvent(oadrCreatedEvent);
         createNewEm();
         entityManager.persist(oadrCreatedEvent);
         entityManager.getTransaction().commit();
         
-        return new EiResponse()        
-            //TODO Need to handle non 200 responses
-            .withResponseCode(new ResponseCode("200"))
-            .withResponseDescription("Optional description!"); 
+        return new OadrResponse()
+            .withEiResponse(new EiResponse()
+                .withRequestID("TH_REQUEST_ID")
+                .withResponseCode(new ResponseCode("200"))
+                .withResponseDescription("Optional description!")); 
     }
     
     @SuppressWarnings("unchecked")
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
         EiResponse eiResponse = new EiResponse(); 
-        if(oadrRequestEvent.getEiRequestEvent().getRequestID() != null){
+        if(!oadrRequestEvent.getEiRequestEvent().getRequestID().equals(null)){
+            Logger.info("Request ID is: " + oadrRequestEvent.getEiRequestEvent().getRequestID());
             eiResponse.setRequestID(oadrRequestEvent.getEiRequestEvent().getRequestID());
+        }
+        else{
+            eiResponse
+                .withRequestID("TH_REQUEST_ID");
         }
         
         //TODO Need to handle non 200 responses
-        eiResponse.setResponseCode(new ResponseCode("200"));        
+        eiResponse.setResponseCode(new ResponseCode("200"));    
+        
         createNewEm();
         entityManager.persist(oadrRequestEvent);  
         entityManager.getTransaction().commit();        
         persistFromRequestEvent(oadrRequestEvent);    
         OadrDistributeEvent oadrDistributeEvent = new OadrDistributeEvent()
                 .withEiResponse(eiResponse)
-                .withRequestID(eiResponse.getRequestID());
-        
+                .withRequestID("TH_REQUEST_ID")
+                .withVtnID("TH_VTN");
+                
+                
         try {
             VEN ven = (VEN) entityManager.createQuery("FROM VEN v WHERE v.venID = :ven")
                 .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
@@ -110,15 +120,16 @@ public class EiEventService{
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             
             for(EiEvent e : events){
-                oadrEvents.add(new OadrEvent().withEiEvent(e));
+                oadrEvents.add(new OadrEvent()
+                    .withEiEvent(e)
+                    .withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
+                    );
             }
             
-            oadrDistributeEvent.withOadrEvents(oadrEvents);        
+            oadrDistributeEvent.withOadrEvents(oadrEvents);
         }        
         catch (NoResultException e) {
-            //TODO add error checking
-            Logger.warn("Could not find VEN. Query was for " + oadrRequestEvent.getEiRequestEvent().getVenID(), e);
-            
+            Logger.warn("Could not find VEN. Query was for " + oadrRequestEvent.getEiRequestEvent().getVenID(), e);            
         }
         return oadrDistributeEvent;
     }
@@ -169,7 +180,7 @@ public class EiEventService{
         createNewEm();
         VENStatus status = null;        
         try{
-            status = (VENStatus)entityManager.createQuery("SELECT status FROM StatusObject " +
+            status = (VENStatus)entityManager.createQuery("SELECT status FROM VENStatus " +
                     "status WHERE status.venID = :ven")
                     .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                     .getSingleResult();

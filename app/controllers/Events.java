@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
@@ -24,11 +25,30 @@ import models.Program;
 import models.VEN;
 import models.VENStatus;
 
+import org.enernoc.open.oadr2.model.CurrentValue;
 import org.enernoc.open.oadr2.model.DateTime;
+import org.enernoc.open.oadr2.model.Dtstart;
+import org.enernoc.open.oadr2.model.DurationPropType;
+import org.enernoc.open.oadr2.model.DurationValue;
+import org.enernoc.open.oadr2.model.EiActivePeriod;
 import org.enernoc.open.oadr2.model.EiEvent;
+import org.enernoc.open.oadr2.model.EiEventSignal;
+import org.enernoc.open.oadr2.model.EiEventSignals;
+import org.enernoc.open.oadr2.model.EiTarget;
+import org.enernoc.open.oadr2.model.EventDescriptor;
 import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
+import org.enernoc.open.oadr2.model.Interval;
+import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.MarketContext;
+import org.enernoc.open.oadr2.model.ObjectFactory;
+import org.enernoc.open.oadr2.model.PayloadFloat;
+import org.enernoc.open.oadr2.model.Properties;
+import org.enernoc.open.oadr2.model.Properties.Tolerance;
+import org.enernoc.open.oadr2.model.Properties.Tolerance.Tolerate;
+import org.enernoc.open.oadr2.model.SignalPayload;
+import org.enernoc.open.oadr2.model.SignalTypeEnumeratedType;
+import org.enernoc.open.oadr2.model.Uid;
 
 import play.data.Form;
 import play.data.validation.ValidationError;
@@ -45,6 +65,7 @@ public class Events extends Controller {
       @Inject static PushService pushService;
     
       static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
+      static ObjectFactory objectFactory = new ObjectFactory();
       static EntityManager entityManager = entityManagerFactory.createEntityManager();
       
       //redirects to the events page
@@ -65,7 +86,7 @@ public class Events extends Controller {
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
     	  Collections.sort(eiEvents, new EiEventComparator());
     	  for(EiEvent e : eiEvents){
-    	      updateStatus(e);
+    	      e.getEventDescriptor().setEventStatus(updateStatus(e));
     	  }
     	  
     	  return ok(views.html.events.render(eiEvents, new Event()));
@@ -79,17 +100,82 @@ public class Events extends Controller {
       @Transactional
       //Method to create a new event once on the newEvent page
       public static Result newEvent() throws JAXBException{
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          
+          Date currentDate = new Date();          
+          GregorianCalendar calendar = new GregorianCalendar();
+          calendar.setTime(currentDate);
+          XMLGregorianCalendar xCalendar = df.newXMLGregorianCalendar(calendar);
+          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
+          
     	  Form<Event> filledForm = form(Event.class).bindFromRequest();
           if(filledForm.hasErrors()) {
         	  addFlashError(filledForm.errors());
               return badRequest(views.html.newEvent.render(filledForm, new Event(), makeProgramMap()));
           }
     	  else{		  
+    	      
+              JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
+              
     		  Event newEventForm = filledForm.get();
+              String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
     		  EiEvent newEvent = newEventForm.toEiEvent();
-    		  String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
-    		  newEvent.getEventDescriptor().setEiMarketContext(new EiMarketContext(new MarketContext(contextName)));
-    		  newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().setValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+    		  newEvent
+    		      .withEiActivePeriod(new EiActivePeriod()
+    		          .withProperties(new Properties()
+    	                  .withDtstart(new Dtstart()
+    	                      .withDateTime(new DateTime()
+                                  .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
+                          .withDuration(new DurationPropType()
+                              .withDuration(new DurationValue()
+                                  .withValue(formatDuration(getDuration(newEvent)))))
+                          .withTolerance(new Tolerance()
+                              .withTolerate(new Tolerate()
+                                  .withStartafter(new DurationValue()
+                                      .withValue(formatDuration(getDuration(newEvent))))))
+                          .withXEiNotification(new DurationPropType()
+                              .withDuration(new DurationValue()
+                                  .withValue(formatDuration(getDuration(newEvent)))))
+                          .withXEiRampUp(new DurationPropType()
+                              .withDuration(new DurationValue()
+                                  .withValue(formatDuration(getDuration(newEvent)))))
+                          .withXEiRecovery(new DurationPropType()
+                              .withDuration(new DurationValue()
+                                  .withValue(formatDuration(getDuration(newEvent)))))))
+                  .withEiEventSignals(new EiEventSignals()
+                          .withEiEventSignals(new EiEventSignal()
+                                  .withCurrentValue(new CurrentValue()
+                                          .withPayloadFloat(new PayloadFloat()
+                                                  .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                                  .withIntervals(new Intervals()
+                                      .withIntervals(new Interval()
+                                          .withDuration(new DurationPropType()
+                                                  .withDuration(new DurationValue()
+                                                          .withValue(formatDuration(getDuration(newEvent)))))
+                                          .withUid(new Uid()
+                                                  .withText("0"))
+                                                  .withStreamPayloadBase(signalPayload)))
+                                  .withSignalID("TH_SIGNAL_ID")
+                                  .withSignalName("simple")
+                                  .withSignalType(SignalTypeEnumeratedType.LEVEL)))
+                  .withEiTarget(new EiTarget())
+                  .withEventDescriptor(new EventDescriptor()
+                          .withCreatedDateTime(new DateTime().withValue(xCalendar))
+                          .withEiMarketContext(new EiMarketContext()
+                                  .withMarketContext(new MarketContext()
+                                          .withValue(contextName)))
+                          .withEventID(newEventForm.getEventID())
+                          .withEventStatus(updateStatus(newEvent))//TODO Probably doesn't need to be set to Far automagically
+                          .withModificationNumber(0)
+                          .withPriority(newEventForm.getPriority())
+                          .withTestEvent("False")
+                          .withVtnComment("No VTN Comment"));    		      		  
+    		  
     		  JPA.em().persist(newEvent);	      		  
     		  flash("success", "Event as been created");
     		  List<VEN> vens = getVENs(newEvent);
@@ -140,7 +226,7 @@ public class Events extends Controller {
       }
       
       @Transactional
-      public static void updateStatus(EiEvent event){
+      public static EventStatusEnumeratedType updateStatus(EiEvent event){
           DatatypeFactory df = null;
           try {
               df = DatatypeFactory.newInstance();
@@ -158,21 +244,27 @@ public class Events extends Controller {
           DateTime startTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           DateTime endTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           
-          Duration d = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
-
+          DateTime rampUpTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+          rampUpTime.getValue().add(getDuration(event.getEiActivePeriod().getProperties().getXEiRampUp().getDuration().getValue()));
+          Duration d = getDuration(event);
           endTime.getValue().add(d);
                   
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.FAR);
+              if(true){
+                  return EventStatusEnumeratedType.NEAR;
+              }
+              else{
+                  return EventStatusEnumeratedType.FAR;                 
+              }
           }
           else if(currentTime.getValue().compare(startTime.getValue()) > 0 && currentTime.getValue().compare(endTime.getValue()) == -1){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.ACTIVE);              
+              return EventStatusEnumeratedType.ACTIVE;        
           }
           else if(currentTime.getValue().compare(endTime.getValue()) > 0){
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.COMPLETED);              
+              return EventStatusEnumeratedType.COMPLETED;
           }
           else{
-              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.NONE);              
+              return EventStatusEnumeratedType.NONE;
           }
       }
       
@@ -212,6 +304,31 @@ public class Events extends Controller {
               venStatus.setTime(new Date());
               JPA.em().persist(venStatus);              
           }    
+      }
+      
+      public static Duration getDuration(EiEvent event){
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
+
+      }
+      
+      public static Duration getDuration(String duration){
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          return df.newDuration(duration);
+      }
+      
+      public static String formatDuration(Duration duration){
+          return duration.toString().replaceAll(".000", "");
       }
       
 }

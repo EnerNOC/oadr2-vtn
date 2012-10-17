@@ -35,7 +35,7 @@ POST    /program/:id/delete		controllers.Programs.deleteProgram(id:Long)
 # Handle Status
 GET /ven_statuses/:program			controllers.VENStatuses.venStatuses(program:String)
 
-POST /ven_statuses					controllers.EiEvents.sendHttpResponse()
+POST /OpenADR2/Simple/EiEvent		controllers.EiEvents.sendHttpResponse()
 
 # Display Page
 POST /ven_statuses/display			controllers.VENStatuses.renderAjaxTable(program:String)

@@ -33,12 +33,9 @@ public class ProtocolRegistry {
             if(uri.contains("http")){
                 registry.put(uri, new HTTPProtocol());
             }
-            else if(true){
+            else{
                 Logger.info("URI is: " + uri);
                 registry.put(uri, new XMPPProtocol());
-            }
-            else{
-                throw new RuntimeException("Malformed URI presented");
             }
         }
     }

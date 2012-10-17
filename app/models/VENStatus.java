@@ -3,6 +3,7 @@ package models;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,6 +11,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.hibernate.mapping.Map;
 
 @Entity(name = "VENStatus")
 @Table(name = "VENSTATUS")
@@ -39,7 +42,7 @@ public class VENStatus {
 	private String requestID;
 	
 	public long getId() {
-		return id;
+		return id;		
 	}
 	
 	public void setId(long id) {
