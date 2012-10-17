@@ -36,7 +36,7 @@ public class Event{
 	@Required(message = "Must enter an Event ID")
 	private String eventID;
 	@Required(message = "Must enter a Priority")
-	@Min(message = "Priority must be greater than zero", value = 0)
+	@Min(message = "Priority must be greater than or equal to 0", value = 0)
 	@Valid
 	private long priority;
 	private String status = "none";
@@ -48,6 +48,10 @@ public class Event{
 	private String endDate;
 	@Required(message = ("Must enter an End Time"))
 	private String endTime;	
+	@Required(message = ("Must enter the number of intervals"))
+	@Min(message = "Priority must be greater than or equal to one", value = 1)
+	@Valid
+	private long intervals = 1;
 	@Required(message = ("Must select a program, if one is not available please create one."))
 	private String marketContext;
 	
@@ -454,5 +458,13 @@ public class Event{
     
     public void setPriority(long priority){
         this.priority = priority;
+    }
+
+    public long getIntervals() {
+        return intervals;
+    }
+
+    public void setIntervals(long intervals) {
+        this.intervals = intervals;
     }
 }

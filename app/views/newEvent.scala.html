@@ -36,6 +36,8 @@
 	            -->
 			
 			<h3>Active Period</h3>
+			@inputText(eiEventsForm("intervals"), '_label -> "Intervals")
+			
 			@if(flash.containsKey("")){
 				<div class ="clearfix error">
 				@inputText(field = eiEventsForm("startDate"), args = '_label -> "Start Date", 'id ->"dp1")
@@ -50,11 +52,6 @@
 				@inputText(field = eiEventsForm("endDate"), args = '_label -> "End Date", 'id ->"dp2")		
 				@inputText(field = eiEventsForm("endTime"), args = '_label -> "End Time", 'id ->"tp2")
 			}
-				
-			<!-- 
-			<h3>Event Signal</h3>
-				@inputText(eiEventsForm("signalID"), '_label -> "Signal ID")
-			-->
 				
 		</fieldset>
 		

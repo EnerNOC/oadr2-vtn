@@ -1,5 +1,6 @@
 package controllers;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -50,6 +51,7 @@ import org.enernoc.open.oadr2.model.SignalPayload;
 import org.enernoc.open.oadr2.model.SignalTypeEnumeratedType;
 import org.enernoc.open.oadr2.model.Uid;
 
+import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -86,7 +88,7 @@ public class Events extends Controller {
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
     	  Collections.sort(eiEvents, new EiEventComparator());
     	  for(EiEvent e : eiEvents){
-    	      e.getEventDescriptor().setEventStatus(updateStatus(e));
+    	      e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
     	  }
     	  
     	  return ok(views.html.events.render(eiEvents, new Event()));
@@ -121,10 +123,24 @@ public class Events extends Controller {
     	  else{		  
     	      
               JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
-              
+                            
     		  Event newEventForm = filledForm.get();
               String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
-    		  EiEvent newEvent = newEventForm.toEiEvent();
+    		  Intervals intervals = new Intervals();
+              ArrayList<Interval> intervalList = new ArrayList<Interval>();
+              EiEvent newEvent = newEventForm.toEiEvent();
+              
+              for(int i=0; i < newEventForm.getIntervals(); i++){
+                  intervalList.add(new Interval()
+                      .withDuration(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue(formatDuration(getDuration(newEvent)))))
+                      .withUid(new Uid()
+                          .withText("" + i))
+                      .withStreamPayloadBase(signalPayload));
+              }
+              intervals.setIntervals(intervalList);
+                            
     		  newEvent
     		      .withEiActivePeriod(new EiActivePeriod()
     		          .withProperties(new Properties()
@@ -133,33 +149,30 @@ public class Events extends Controller {
                                   .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
                           .withDuration(new DurationPropType()
                               .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent)))))
+                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
                           .withTolerance(new Tolerance()
                               .withTolerate(new Tolerate()
                                   .withStartafter(new DurationValue()
-                                      .withValue(formatDuration(getDuration(newEvent))))))
+                                      .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals()))))))
+                          
                           .withXEiNotification(new DurationPropType()
                               .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent)))))
+                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
                           .withXEiRampUp(new DurationPropType()
                               .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent)))))
+                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
                           .withXEiRecovery(new DurationPropType()
                               .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent)))))))
+                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))))
+                          
+                                      
                   .withEiEventSignals(new EiEventSignals()
                           .withEiEventSignals(new EiEventSignal()
                                   .withCurrentValue(new CurrentValue()
                                           .withPayloadFloat(new PayloadFloat()
                                                   .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
                                   .withIntervals(new Intervals()
-                                      .withIntervals(new Interval()
-                                          .withDuration(new DurationPropType()
-                                                  .withDuration(new DurationValue()
-                                                          .withValue(formatDuration(getDuration(newEvent)))))
-                                          .withUid(new Uid()
-                                                  .withText("0"))
-                                                  .withStreamPayloadBase(signalPayload)))
+                                      .withIntervals(intervalList))
                                   .withSignalID("TH_SIGNAL_ID")
                                   .withSignalName("simple")
                                   .withSignalType(SignalTypeEnumeratedType.LEVEL)))
@@ -170,7 +183,7 @@ public class Events extends Controller {
                                   .withMarketContext(new MarketContext()
                                           .withValue(contextName)))
                           .withEventID(newEventForm.getEventID())
-                          .withEventStatus(updateStatus(newEvent))//TODO Probably doesn't need to be set to Far automagically
+                          .withEventStatus(updateStatus(newEvent, (int)newEventForm.getIntervals()))
                           .withModificationNumber(0)
                           .withPriority(newEventForm.getPriority())
                           .withTestEvent("False")
@@ -226,7 +239,7 @@ public class Events extends Controller {
       }
       
       @Transactional
-      public static EventStatusEnumeratedType updateStatus(EiEvent event){
+      public static EventStatusEnumeratedType updateStatus(EiEvent event, int intervals){
           DatatypeFactory df = null;
           try {
               df = DatatypeFactory.newInstance();
@@ -246,11 +259,12 @@ public class Events extends Controller {
           
           DateTime rampUpTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           rampUpTime.getValue().add(getDuration(event.getEiActivePeriod().getProperties().getXEiRampUp().getDuration().getValue()));
-          Duration d = getDuration(event);
+                    
+          Duration d = getDuration(event, intervals);
           endTime.getValue().add(d);
                   
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
-              if(true){
+              if(rampUpTime.getValue().compare(startTime.getValue()) != -1 ){
                   return EventStatusEnumeratedType.NEAR;
               }
               else{
@@ -314,7 +328,17 @@ public class Events extends Controller {
             e.printStackTrace();
           }
           return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
-
+      }
+      
+      public static Duration getDuration(EiEvent event, int intervals){
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          Duration duration = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
+          return duration.multiply(intervals);
       }
       
       public static Duration getDuration(String duration){
