@@ -28,6 +28,7 @@ import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.Properties;
 
+import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
 
@@ -80,7 +81,7 @@ public class Event{
 		this.priority = e.getEventDescriptor().getPriority();
 		this.status = e.getEventDescriptor().getEventStatus().value();
 		//TODO This line below could be a bit picky come time for Edit
-		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValueItem().toString();
+		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString();
 		this.duration = e.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
 		setStartDateTime(this.start);
 		setEndDateTime();
@@ -208,8 +209,16 @@ public class Event{
         calendar.setDay(startDay);
         calendar.setHour(startHour);
         calendar.setMinute(startMinute);
+        calendar.setSecond(0);
+        
+        /*
+        calendar.setYear(startYear);
+        calendar.setMonth(startMonth);
+        calendar.setDay(startDay);
+        calendar.setHour(startHour);
+        calendar.setMinute(startMinute);
+        */
 		dateTime.setValue(calendar);
-		
 		return dateTime;
 	}
 	
@@ -269,7 +278,7 @@ public class Event{
 		DateTime endDateTime = createDateTime(startDate, startTime); // temp == start time
 		Duration duration = xmlDataTypeFac.newDuration(this.duration.toString());
 		endDateTime.getValue().add(duration);
-		String endString = endDateTime.toString();
+		String endString = endDateTime.getValue().toString();
 		
 		this.endDate = endString.substring(5, 7) + "-" + endString.substring(8, 10) + "-" + endString.substring(0, 4);
 		int startHours = Integer.parseInt(endString.substring(11, 13));
@@ -386,7 +395,8 @@ public class Event{
 		return null;
 	}
 	
-	public boolean startIsBeforeEnd(String startDate, String startTime, String endDate, String endTime){		
+	public boolean startIsBeforeEnd(String startDate, String startTime, String endDate, String endTime){
+	    
 		DateTime dtStart = createDateTime(startDate, startTime);
 		DateTime dtEnd = createDateTime(endDate, endTime);
 		return dtStart.getValue().toGregorianCalendar().getTimeInMillis() <= dtEnd.getValue().toGregorianCalendar().getTimeInMillis();	

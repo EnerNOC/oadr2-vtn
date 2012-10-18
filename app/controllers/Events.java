@@ -69,6 +69,14 @@ public class Events extends Controller {
       static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
       static ObjectFactory objectFactory = new ObjectFactory();
       static EntityManager entityManager = entityManagerFactory.createEntityManager();
+      static DatatypeFactory datatypeFactory;
+      static{
+          try {
+              datatypeFactory = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+      }
       
       //redirects to the events page
       public static Result index() {
@@ -102,93 +110,13 @@ public class Events extends Controller {
       @Transactional
       //Method to create a new event once on the newEvent page
       public static Result newEvent() throws JAXBException{
-          DatatypeFactory df = null;
-          try {
-              df = DatatypeFactory.newInstance();
-          } catch (DatatypeConfigurationException e) {
-            e.printStackTrace();
-          }
-          
-          Date currentDate = new Date();          
-          GregorianCalendar calendar = new GregorianCalendar();
-          calendar.setTime(currentDate);
-          XMLGregorianCalendar xCalendar = df.newXMLGregorianCalendar(calendar);
-          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
-          
     	  Form<Event> filledForm = form(Event.class).bindFromRequest();
           if(filledForm.hasErrors()) {
         	  addFlashError(filledForm.errors());
               return badRequest(views.html.newEvent.render(filledForm, new Event(), makeProgramMap()));
           }
-    	  else{		  
-    	      
-              JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
-                            
-    		  Event newEventForm = filledForm.get();
-              String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
-    		  Intervals intervals = new Intervals();
-              ArrayList<Interval> intervalList = new ArrayList<Interval>();
-              EiEvent newEvent = newEventForm.toEiEvent();
-              
-              for(int i=0; i < newEventForm.getIntervals(); i++){
-                  intervalList.add(new Interval()
-                      .withDuration(new DurationPropType()
-                          .withDuration(new DurationValue()
-                              .withValue(formatDuration(getDuration(newEvent)))))
-                      .withUid(new Uid()
-                          .withText("" + i))
-                      .withStreamPayloadBase(signalPayload));
-              }
-              intervals.setIntervals(intervalList);
-                            
-    		  newEvent
-    		      .withEiActivePeriod(new EiActivePeriod()
-    		          .withProperties(new Properties()
-    	                  .withDtstart(new Dtstart()
-    	                      .withDateTime(new DateTime()
-                                  .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
-                          .withDuration(new DurationPropType()
-                              .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
-                          .withTolerance(new Tolerance()
-                              .withTolerate(new Tolerate()
-                                  .withStartafter(new DurationValue()
-                                      .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals()))))))
-                          
-                          .withXEiNotification(new DurationPropType()
-                              .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
-                          .withXEiRampUp(new DurationPropType()
-                              .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
-                          .withXEiRecovery(new DurationPropType()
-                              .withDuration(new DurationValue()
-                                  .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))))
-                          
-                                      
-                  .withEiEventSignals(new EiEventSignals()
-                          .withEiEventSignals(new EiEventSignal()
-                                  .withCurrentValue(new CurrentValue()
-                                          .withPayloadFloat(new PayloadFloat()
-                                                  .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
-                                  .withIntervals(new Intervals()
-                                      .withIntervals(intervalList))
-                                  .withSignalID("TH_SIGNAL_ID")
-                                  .withSignalName("simple")
-                                  .withSignalType(SignalTypeEnumeratedType.LEVEL)))
-                  .withEiTarget(new EiTarget())
-                  .withEventDescriptor(new EventDescriptor()
-                          .withCreatedDateTime(new DateTime().withValue(xCalendar))
-                          .withEiMarketContext(new EiMarketContext()
-                                  .withMarketContext(new MarketContext()
-                                          .withValue(contextName)))
-                          .withEventID(newEventForm.getEventID())
-                          .withEventStatus(updateStatus(newEvent, (int)newEventForm.getIntervals()))
-                          .withModificationNumber(0)
-                          .withPriority(newEventForm.getPriority())
-                          .withTestEvent("False")
-                          .withVtnComment("No VTN Comment"));    		      		  
-    		  
+    	  else{  
+    		  EiEvent newEvent = buildEventFromForm(filledForm.get());
     		  JPA.em().persist(newEvent);	      		  
     		  flash("success", "Event as been created");
     		  List<VEN> vens = getVENs(newEvent);
@@ -212,10 +140,79 @@ public class Events extends Controller {
           if(eventForm.hasErrors()) {
               return badRequest(views.html.editEvent.render(id, eventForm, new Event(), makeProgramMap()));
           }
+          Event newEventForm = eventForm.get();
+          /*
           Event eiEventForm= eventForm.get();
           eiEventForm.copyEvent(JPA.em().find(EiEvent.class, id));
-          EiEvent event = JPA.em().find(EiEvent.class, id);
-          event = eiEventForm.getEiEvent();
+          */
+          EiEvent event = JPA.em().find(EiEvent.class, id);            
+          Date currentDate = new Date();          
+          GregorianCalendar calendar = new GregorianCalendar();
+          calendar.setTime(currentDate);
+          XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
+          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
+          
+          JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
+          
+          String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
+          Intervals intervals = new Intervals();
+          ArrayList<Interval> intervalList = new ArrayList<Interval>();
+          
+          for(int i=0; i < newEventForm.getIntervals(); i++){
+              intervalList.add(new Interval()
+                  .withDuration(new DurationPropType()
+                      .withDuration(new DurationValue()
+                          .withValue(formatDuration(getDuration(event)))))
+                  .withUid(new Uid()
+                      .withText("" + i))
+                  .withStreamPayloadBase(signalPayload));
+          }
+          intervals.setIntervals(intervalList);
+                    
+          event.setEiActivePeriod(new EiActivePeriod()
+                  .withProperties(new Properties()
+                      .withDtstart(new Dtstart()
+                          .withDateTime(new DateTime()
+                              .withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
+                      .withDuration(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue(formatDuration(getDuration(event, (int)newEventForm.getIntervals())))))
+                      .withTolerance(new Tolerance()
+                          .withTolerate(new Tolerate()
+                              .withStartafter(new DurationValue()
+                                  .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S")))))))
+                      .withXEiNotification(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))
+                      .withXEiRampUp(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))
+                      .withXEiRecovery(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))));
+          event.setEiEventSignals(new EiEventSignals()
+                      .withEiEventSignals(new EiEventSignal()
+                              .withCurrentValue(new CurrentValue()
+                                      .withPayloadFloat(new PayloadFloat()
+                                              .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                              .withIntervals(new Intervals()
+                                  .withIntervals(intervalList))
+                              .withSignalID("TH_SIGNAL_ID")
+                              .withSignalName("simple")
+                              .withSignalType(SignalTypeEnumeratedType.LEVEL)));
+          event.setEiTarget(new EiTarget());
+          event.setEventDescriptor(new EventDescriptor()
+                      .withCreatedDateTime(new DateTime().withValue(xCalendar))
+                      .withEiMarketContext(new EiMarketContext()
+                              .withMarketContext(new MarketContext()
+                                      .withValue(contextName)))
+                      .withEventID(newEventForm.getEventID())
+                      .withEventStatus(updateStatus(event, (int)newEventForm.getIntervals()))
+                      .withModificationNumber(event.getEventDescriptor().getModificationNumber() + 1)
+                      .withPriority(newEventForm.getPriority())
+                      .withTestEvent("False")
+                      .withVtnComment("No VTN Comment"));
+          
           JPA.em().merge(event);
           flash("success", "Event has been updated");
     	  return redirect(routes.Events.events());
@@ -258,17 +255,17 @@ public class Events extends Controller {
           DateTime endTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           
           DateTime rampUpTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
+          
           rampUpTime.getValue().add(getDuration(event.getEiActivePeriod().getProperties().getXEiRampUp().getDuration().getValue()));
-                    
           Duration d = getDuration(event, intervals);
           endTime.getValue().add(d);
                   
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
-              if(rampUpTime.getValue().compare(startTime.getValue()) != -1 ){
-                  return EventStatusEnumeratedType.NEAR;
+              if(currentTime.getValue().compare(rampUpTime.getValue()) == -1 ){
+                  return EventStatusEnumeratedType.FAR;
               }
               else{
-                  return EventStatusEnumeratedType.FAR;                 
+                  return EventStatusEnumeratedType.NEAR;                 
               }
           }
           else if(currentTime.getValue().compare(startTime.getValue()) > 0 && currentTime.getValue().compare(endTime.getValue()) == -1){
@@ -354,5 +351,80 @@ public class Events extends Controller {
       public static String formatDuration(Duration duration){
           return duration.toString().replaceAll(".000", "");
       }
+      
+      public static EiEvent buildEventFromForm(Event newEventForm){            
+          Date currentDate = new Date();          
+          GregorianCalendar calendar = new GregorianCalendar();
+          calendar.setTime(currentDate);
+          XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
+          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
+          
+          JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
+          
+          String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
+          Intervals intervals = new Intervals();
+          ArrayList<Interval> intervalList = new ArrayList<Interval>();
+          EiEvent newEvent = newEventForm.toEiEvent();
+          
+          for(int i=0; i < newEventForm.getIntervals(); i++){
+              intervalList.add(new Interval()
+                  .withDuration(new DurationPropType()
+                      .withDuration(new DurationValue()
+                          .withValue(formatDuration(getDuration(newEvent)))))
+                  .withUid(new Uid()
+                      .withText("" + i))
+                  .withStreamPayloadBase(signalPayload));
+          }
+          intervals.setIntervals(intervalList);
+                        
+          newEvent
+              .withEiActivePeriod(new EiActivePeriod()
+                  .withProperties(new Properties()
+                      .withDtstart(new Dtstart()
+                          .withDateTime(new DateTime()
+                              .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
+                      .withDuration(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
+                      .withTolerance(new Tolerance()
+                          .withTolerate(new Tolerate()
+                              .withStartafter(new DurationValue()
+                                  .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S")))))))
+                      
+                      .withXEiNotification(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))
+                      .withXEiRampUp(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))
+                      .withXEiRecovery(new DurationPropType()
+                          .withDuration(new DurationValue()
+                              .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))))
+                      
+                                  
+              .withEiEventSignals(new EiEventSignals()
+                      .withEiEventSignals(new EiEventSignal()
+                              .withCurrentValue(new CurrentValue()
+                                      .withPayloadFloat(new PayloadFloat()
+                                              .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                              .withIntervals(new Intervals()
+                                  .withIntervals(intervalList))
+                              .withSignalID("TH_SIGNAL_ID")
+                              .withSignalName("simple")
+                              .withSignalType(SignalTypeEnumeratedType.LEVEL)))
+              .withEiTarget(new EiTarget())
+              .withEventDescriptor(new EventDescriptor()
+                      .withCreatedDateTime(new DateTime().withValue(xCalendar))
+                      .withEiMarketContext(new EiMarketContext()
+                              .withMarketContext(new MarketContext()
+                                      .withValue(contextName)))
+                      .withEventID(newEventForm.getEventID())
+                      .withEventStatus(updateStatus(newEvent, (int)newEventForm.getIntervals()))
+                      .withModificationNumber(0)
+                      .withPriority(newEventForm.getPriority())
+                      .withTestEvent("False")
+                      .withVtnComment("No VTN Comment"));
+          return newEvent;
+      }     
       
 }

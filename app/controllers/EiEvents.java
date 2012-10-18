@@ -40,7 +40,6 @@ public class EiEvents extends Controller{
         Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(request().body().asRaw().asBytes()));
         Object eiResponse = eiEventService.handleOadrPayload(payload);
         Marshaller marshaller = jaxbManager.createMarshaller();
-        
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         marshaller.marshal(eiResponse, outputStream);
         response().setContentType("application/xml");

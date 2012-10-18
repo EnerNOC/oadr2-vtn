@@ -86,8 +86,7 @@ public class EiEventService{
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
         EiResponse eiResponse = new EiResponse(); 
-        if(!oadrRequestEvent.getEiRequestEvent().getRequestID().equals(null)){
-            Logger.info("Request ID is: " + oadrRequestEvent.getEiRequestEvent().getRequestID());
+        if(!oadrRequestEvent.getEiRequestEvent().getRequestID().equals("")){
             eiResponse.setRequestID(oadrRequestEvent.getEiRequestEvent().getRequestID());
         }
         else{
@@ -113,17 +112,17 @@ public class EiEventService{
                 .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();        
             
-            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
-                    "descriptor WHERE descriptor.marketContext.value = :market")
+            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
                     .setParameter("market", ven.getProgramId())
                     .getResultList();
+            Logger.info(events.size() + "");
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
-            
             for(EiEvent e : events){
+                Logger.info("Event - " + e.getEventDescriptor().getEventID());
                 oadrEvents.add(new OadrEvent()
                     .withEiEvent(e)
                     .withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
-                    );
+                );
             }
             
             oadrDistributeEvent.withOadrEvents(oadrEvents);
@@ -151,34 +150,35 @@ public class EiEventService{
         venStatus.setTime(new Date());
         venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
         
-        VEN customer = null;
-        EiEvent event = null;
         createNewEm();
         
-        customer = (VEN)entityManager.createQuery("SELECT c FROM VEN c WHERE c.venID = :ven")
+        VEN customer = (VEN)entityManager.createQuery("SELECT c FROM VEN c WHERE c.venID = :ven")
                 .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                 .getSingleResult();
                   
         venStatus.setProgram(customer.getProgramId());
         
-        event = (EiEvent)entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
+        List<EiEvent> events = entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
                 "marketContext WHERE marketContext.marketContext.value = :market and event.hjid = marketContext.hjid")
                 .setParameter("market", venStatus.getProgram())
-                .getSingleResult();
-                
-        if(customer != null && event != null){  
-            venStatus.setEventID(event.getEventDescriptor().getEventID());
-            venStatus.setOptStatus("Pending 2");
-            createNewEm();
-            entityManager.merge(venStatus);
-            entityManager.getTransaction().commit();
+                .getResultList();
+        
+        if(customer != null){  
+            for(EiEvent event : events){
+                venStatus.setEventID(event.getEventDescriptor().getEventID());
+                venStatus.setOptStatus("Pending 2");
+                createNewEm();
+                entityManager.merge(venStatus);
+                entityManager.getTransaction().commit();
+            }
         }
     }
 
     @Transactional
     public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
         createNewEm();
-        VENStatus status = null;        
+        VENStatus status = null;
+        Logger.info("VEN - " + createdEvent.getEiCreatedEvent().getVenID());
         try{
             status = (VENStatus)entityManager.createQuery("SELECT status FROM VENStatus " +
                     "status WHERE status.venID = :ven")
