@@ -104,17 +104,18 @@ public class EiEventService{
         OadrDistributeEvent oadrDistributeEvent = new OadrDistributeEvent()
                 .withEiResponse(eiResponse)
                 .withRequestID("TH_REQUEST_ID")
-                .withVtnID("TH_VTN");
+                .withVtnID("TH_VTN");                
                 
-                
-        try {
-            VEN ven = (VEN) entityManager.createQuery("FROM VEN v WHERE v.venID = :ven")
-                .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
-                .getSingleResult();        
-            
-            List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
-                    .setParameter("market", ven.getProgramId())
-                    .getResultList();
+        List<VEN> vens = entityManager.createQuery("FROM VEN v WHERE v.venID = :ven")
+            .setParameter("ven", oadrRequestEvent.getEiRequestEvent().getVenID())
+            .getResultList();        
+        List<EiEvent> events = new ArrayList<EiEvent>();
+        for(VEN ven : vens){
+                for(EiEvent event : (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
+                        .setParameter("market", ven.getProgramId())
+                        .getResultList()){
+                    events.add(event);
+            }            
             Logger.info(events.size() + "");
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             for(EiEvent e : events){
@@ -125,9 +126,6 @@ public class EiEventService{
                 );
             }            
             oadrDistributeEvent.withOadrEvents(oadrEvents);
-        }        
-        catch (NoResultException e) {
-            Logger.warn("Could not find VEN. Query was for " + oadrRequestEvent.getEiRequestEvent().getVenID(), e);            
         }
         return oadrDistributeEvent;
     }
@@ -136,59 +134,58 @@ public class EiEventService{
     @Transactional
     public static void persistFromRequestEvent(OadrRequestEvent requestEvent){
         createNewEm();
-        VENStatus venStatus = null;
-        try{
-            venStatus = (VENStatus)entityManager.createQuery("SELECT status FROM VENStatus " +
-                    "status WHERE status.venID = :ven")
-                    .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
-                    .getSingleResult();
+        List<VENStatus> venStatuses = new ArrayList<VENStatus>();
+        venStatuses = entityManager.createQuery("SELECT status FROM VENStatus " +
+            "status WHERE status.venID = :ven")
+            .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
+            .getResultList();
+        if(venStatuses.size() == 0){
+            venStatuses.add(new VENStatus());
         }
-        catch(Exception e){
-            venStatus = new VENStatus();
-        };
-        venStatus.setTime(new Date());
-        venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
+        for(VENStatus venStatus : venStatuses){
+            venStatus.setTime(new Date());
+            venStatus.setVenID(requestEvent.getEiRequestEvent().getVenID());
         
-        createNewEm();
-        
-        VEN customer = (VEN)entityManager.createQuery("SELECT c FROM VEN c WHERE c.venID = :ven")
-                .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
-                .getSingleResult();
-                  
-        venStatus.setProgram(customer.getProgramId());
-        
-        List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
-                .setParameter("market", venStatus.getProgram())
-                .getResultList();
-        
-        Logger.info("Events size - " + events.size());
-        
-        if(customer != null){  
-            for(EiEvent event : events){
-                venStatus.setEventID(event.getEventDescriptor().getEventID());
-                venStatus.setOptStatus("Pending 2");
-                createNewEm();
-                Logger.info("VenStatus - " + venStatus.getVenID());
-                entityManager.merge(venStatus);
-                entityManager.getTransaction().commit();
+            createNewEm();
+            
+            List<VEN> customers = (List<VEN>)entityManager.createQuery("SELECT c FROM VEN c WHERE c.venID = :ven")
+                    .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
+                    .getResultList();
+            for(VEN customer : customers){
+                venStatus.setProgram(customer.getProgramId());
+                
+                
+                List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
+                        .setParameter("market", venStatus.getProgram())
+                        .getResultList();
+                
+                Logger.info("Events size - " + events.size());
+                
+                if(customer != null){  
+                    for(EiEvent event : events){
+                        venStatus.setEventID(event.getEventDescriptor().getEventID());
+                        venStatus.setOptStatus("Pending 2");
+                        createNewEm();
+                        Logger.info("VenStatus - " + venStatus.getVenID());
+                        entityManager.merge(venStatus);
+                        entityManager.getTransaction().commit();
+                    }
+                }
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Transactional
     public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
         createNewEm();
-        VENStatus status = null;
+        List<VENStatus> venStatuses = new ArrayList<VENStatus>();
         Logger.info("VEN - " + createdEvent.getEiCreatedEvent().getVenID());
-        try{
-            status = (VENStatus)entityManager.createQuery("SELECT status FROM VENStatus " +
-                    "status WHERE status.venID = :ven")
-                    .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
-                    .getSingleResult();
-        }catch(Exception e){
-            e.printStackTrace();
-        };
-        if(status != null){
+        venStatuses = (List<VENStatus>)entityManager.createQuery("SELECT status FROM VENStatus " +
+                "status WHERE status.venID = :ven")
+                .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
+                .getResultList();
+        for(VENStatus status : venStatuses){
             status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getOptType().toString());
             status.setTime(new Date());
             createNewEm();
