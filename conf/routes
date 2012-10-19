@@ -22,10 +22,13 @@ POST /events/:id				controllers.Events.updateEvent(id:Long)
 # Delete Event
 POST    /events/:id/delete		controllers.Events.deleteEvent(id:Long)
 
+# Cancel Event
+POST /program/:id/cancel		controllers.Events.cancelEvent(id:Long)
+
 # Program List
 GET /programs					controllers.Programs.programs()
 
-# New Event
+# New Program
 GET	/programs/new				controllers.Programs.blankProgram()
 POST	/programs				controllers.Programs.newProgram()
 
@@ -35,6 +38,7 @@ POST    /program/:id/delete		controllers.Programs.deleteProgram(id:Long)
 # Handle Status
 GET /ven_statuses/:program			controllers.VENStatuses.venStatuses(program:String)
 
+# HTTP Service
 POST /OpenADR2/Simple/EiEvent		controllers.EiEvents.sendHttpResponse()
 
 # Display Page

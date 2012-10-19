@@ -93,10 +93,18 @@ public class Events extends Controller {
     			          eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
     		  }
     	  } 
+          Date currentDate = new Date();          
+          GregorianCalendar calendar = new GregorianCalendar();
+          calendar.setTime(currentDate);
+          XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
+          xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
     	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
     	  Collections.sort(eiEvents, new EiEventComparator());
     	  for(EiEvent e : eiEvents){
-    	      e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
+    	      e.getEventDescriptor()
+    	          .withCreatedDateTime(new DateTime().withValue(xCalendar));
+    	      if(!e.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.CANCELLED))
+    	          e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
     	  }
     	  
     	  return ok(views.html.events.render(eiEvents, new Event()));
@@ -127,6 +135,20 @@ public class Events extends Controller {
       }
       
       @Transactional
+      public static Result cancelEvent(Long id){
+          EiEvent event = JPA.em().find(EiEvent.class, id);
+          event.getEventDescriptor().setModificationNumber(event.getEventDescriptor().getModificationNumber() + 1);
+          if(event.getEventDescriptor().getEventStatus() != EventStatusEnumeratedType.CANCELLED)
+              event.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.CANCELLED);
+          else
+              event.getEventDescriptor().setEventStatus(updateStatus(event, event.getEiEventSignals().getEiEventSignals().size()));
+          for(EiEventSignal e : event.getEiEventSignals().getEiEventSignals()){
+              e.setCurrentValue(new CurrentValue().withPayloadFloat(new PayloadFloat(updateSignalPayload(event))));
+          }
+          return redirect(routes.Events.events());
+      }
+      
+      @Transactional
       //Deletes an event based on the id
       public static Result deleteEvent(Long id){
     	  JPA.em().remove(JPA.em().find(EiEvent.class, id));
@@ -141,10 +163,6 @@ public class Events extends Controller {
               return badRequest(views.html.editEvent.render(id, eventForm, new Event(), makeProgramMap()));
           }
           Event newEventForm = eventForm.get();
-          /*
-          Event eiEventForm= eventForm.get();
-          eiEventForm.copyEvent(JPA.em().find(EiEvent.class, id));
-          */
           EiEvent event = JPA.em().find(EiEvent.class, id);            
           Date currentDate = new Date();          
           GregorianCalendar calendar = new GregorianCalendar();
@@ -190,16 +208,6 @@ public class Events extends Controller {
                       .withXEiRecovery(new DurationPropType()
                           .withDuration(new DurationValue()
                               .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))));
-          event.setEiEventSignals(new EiEventSignals()
-                      .withEiEventSignals(new EiEventSignal()
-                              .withCurrentValue(new CurrentValue()
-                                      .withPayloadFloat(new PayloadFloat()
-                                              .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
-                              .withIntervals(new Intervals()
-                                  .withIntervals(intervalList))
-                              .withSignalID("TH_SIGNAL_ID")
-                              .withSignalName("simple")
-                              .withSignalType(SignalTypeEnumeratedType.LEVEL)));
           event.setEiTarget(new EiTarget());
           event.setEventDescriptor(new EventDescriptor()
                       .withCreatedDateTime(new DateTime().withValue(xCalendar))
@@ -212,6 +220,16 @@ public class Events extends Controller {
                       .withPriority(newEventForm.getPriority())
                       .withTestEvent("False")
                       .withVtnComment("No VTN Comment"));
+          event.setEiEventSignals(new EiEventSignals()
+          .withEiEventSignals(new EiEventSignal()
+                  .withCurrentValue(new CurrentValue()
+                          .withPayloadFloat(new PayloadFloat()
+                                  .withValue(updateSignalPayload(event)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                  .withIntervals(new Intervals()
+                      .withIntervals(intervalList))
+                  .withSignalID("TH_SIGNAL_ID")
+                  .withSignalName("simple")
+                  .withSignalType(SignalTypeEnumeratedType.LEVEL)));
           
           JPA.em().merge(event);
           flash("success", "Event has been updated");
@@ -279,6 +297,11 @@ public class Events extends Controller {
           }
       }
       
+      public static float updateSignalPayload(EiEvent event){
+          if(event.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE))
+              return 1;
+          return 0;
+      }
       @SuppressWarnings("unchecked")
       @Transactional
       public static void populateFromPush(EiEvent e){
@@ -375,8 +398,7 @@ public class Events extends Controller {
                       .withText("" + i))
                   .withStreamPayloadBase(signalPayload));
           }
-          intervals.setIntervals(intervalList);
-                        
+          intervals.setIntervals(intervalList);                        
           newEvent
               .withEiActivePeriod(new EiActivePeriod()
                   .withProperties(new Properties()
@@ -389,8 +411,7 @@ public class Events extends Controller {
                       .withTolerance(new Tolerance()
                           .withTolerate(new Tolerate()
                               .withStartafter(new DurationValue()
-                                  .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S")))))))
-                      
+                                  .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S")))))))                      
                       .withXEiNotification(new DurationPropType()
                           .withDuration(new DurationValue()
                               .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))
@@ -400,18 +421,6 @@ public class Events extends Controller {
                       .withXEiRecovery(new DurationPropType()
                           .withDuration(new DurationValue()
                               .withValue((formatDuration(getDuration("P0Y0M0DT0H0M0S"))))))))
-                      
-                                  
-              .withEiEventSignals(new EiEventSignals()
-                      .withEiEventSignals(new EiEventSignal()
-                              .withCurrentValue(new CurrentValue()
-                                      .withPayloadFloat(new PayloadFloat()
-                                              .withValue(0))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
-                              .withIntervals(new Intervals()
-                                  .withIntervals(intervalList))
-                              .withSignalID("TH_SIGNAL_ID")
-                              .withSignalName("simple")
-                              .withSignalType(SignalTypeEnumeratedType.LEVEL)))
               .withEiTarget(new EiTarget())
               .withEventDescriptor(new EventDescriptor()
                       .withCreatedDateTime(new DateTime().withValue(xCalendar))
@@ -423,8 +432,19 @@ public class Events extends Controller {
                       .withModificationNumber(0)
                       .withPriority(newEventForm.getPriority())
                       .withTestEvent("False")
-                      .withVtnComment("No VTN Comment"));
+                      .withVtnComment("No VTN Comment"))
+              .withEiEventSignals(new EiEventSignals()
+                      .withEiEventSignals(new EiEventSignal()
+                              .withCurrentValue(new CurrentValue()
+                                      .withPayloadFloat(new PayloadFloat()
+                                              .withValue(updateSignalPayload(newEvent)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                              .withIntervals(new Intervals()
+                                  .withIntervals(intervalList))
+                              .withSignalID("TH_SIGNAL_ID")
+                              .withSignalName("simple")
+                              .withSignalType(SignalTypeEnumeratedType.LEVEL)));
           return newEvent;
       }     
+      
       
 }

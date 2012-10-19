@@ -123,8 +123,7 @@ public class EiEventService{
                     .withEiEvent(e)
                     .withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
                 );
-            }
-            
+            }            
             oadrDistributeEvent.withOadrEvents(oadrEvents);
         }        
         catch (NoResultException e) {
@@ -144,7 +143,7 @@ public class EiEventService{
                     .setParameter("ven", requestEvent.getEiRequestEvent().getVenID())
                     .getSingleResult();
         }
-        catch(NoResultException e){
+        catch(Exception e){
             venStatus = new VENStatus();
         };
         venStatus.setTime(new Date());
@@ -158,16 +157,18 @@ public class EiEventService{
                   
         venStatus.setProgram(customer.getProgramId());
         
-        List<EiEvent> events = entityManager.createQuery("SELECT event FROM EiEvent event, EventDescriptor$EiMarketContext " +
-                "marketContext WHERE marketContext.marketContext.value = :market and event.hjid = marketContext.hjid")
+        List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
                 .setParameter("market", venStatus.getProgram())
                 .getResultList();
+        
+        Logger.info("Events size - " + events.size());
         
         if(customer != null){  
             for(EiEvent event : events){
                 venStatus.setEventID(event.getEventDescriptor().getEventID());
                 venStatus.setOptStatus("Pending 2");
                 createNewEm();
+                Logger.info("VenStatus - " + venStatus.getVenID());
                 entityManager.merge(venStatus);
                 entityManager.getTransaction().commit();
             }

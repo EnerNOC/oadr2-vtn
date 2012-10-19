@@ -43,7 +43,11 @@
 							@form(routes.Events.deleteEvent(event.getHjid())){
 								<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
 							}
-						</td>						
+						</td>	
+						<td>
+							@form(routes.Events.cancelEvent(event.getHjid())){
+								<input type="submit" value="Cancel" class="btn">
+							}			
 					</tr>
 				}            	
             </tbody>
