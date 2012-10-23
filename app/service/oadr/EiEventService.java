@@ -1,6 +1,8 @@
 package service.oadr;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -14,6 +16,7 @@ import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
+import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
@@ -85,6 +88,27 @@ public class EiEventService{
     @SuppressWarnings("unchecked")
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
+        class OadrEventComparator implements Comparator<OadrEvent>{
+            public int compare(OadrEvent eventOne, OadrEvent eventTwo){
+                Logger.info("Event One - " + eventOne.getEiEvent().getEventDescriptor().getEventID() + ", Event Two - " + eventTwo.getEiEvent().getEventDescriptor().getEventID());
+                if(eventOne.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
+                    if(eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
+                        if(eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority()) == 0){
+                            return eventOne.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
+                                    eventTwo.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
+                        }
+                        return eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority());
+                    }
+                    return -1;
+                }
+                else if(eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
+                    return 1;
+                }
+                return 0;
+            }
+                
+        }         
+        
         EiResponse eiResponse = new EiResponse(); 
         if(!oadrRequestEvent.getEiRequestEvent().getRequestID().equals("")){
             eiResponse.setRequestID(oadrRequestEvent.getEiRequestEvent().getRequestID());
@@ -124,7 +148,8 @@ public class EiEventService{
                     .withEiEvent(e)
                     .withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
                 );
-            }            
+            }
+            Collections.sort(oadrEvents, new OadrEventComparator());
             oadrDistributeEvent.withOadrEvents(oadrEvents);
         }
         return oadrDistributeEvent;
@@ -218,5 +243,7 @@ public class EiEventService{
             entityManager.getTransaction().begin();
         }
     }
+    
+    
     
 }
