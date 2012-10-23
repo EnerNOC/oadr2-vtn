@@ -88,23 +88,40 @@ public class EiEventService{
     @SuppressWarnings("unchecked")
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
+        /**
+         * Comparator to determine ordering of the OadrEvents
+         * Expected ordering is
+         * 1. Active events have priority
+         * 2. Within Active, priority is determine by the EventDescriptor.Priority
+         * 3. If both have equal EventDescriptor.Priority, the earlier start time is the higher priority
+         * 4. Pending events are sorted by earlier start time
+         * @author jlajoie
+         *
+         */
         class OadrEventComparator implements Comparator<OadrEvent>{
             public int compare(OadrEvent eventOne, OadrEvent eventTwo){
-                Logger.info("Event One - " + eventOne.getEiEvent().getEventDescriptor().getEventID() + ", Event Two - " + eventTwo.getEiEvent().getEventDescriptor().getEventID());
-                if(eventOne.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
-                    if(eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
-                        if(eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority()) == 0){
-                            return eventOne.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
-                                    eventTwo.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
+                
+                boolean eventOneIsActive = eventOne.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE);
+                boolean eventTwoIsActive = eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE);
+                int comparedEventPriority = eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority());
+                int comparedEventDt = eventOne.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
+                        eventTwo.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
+                
+                if(eventOneIsActive){
+                    if(eventTwoIsActive){
+                        if(comparedEventPriority == 0){
+                            return comparedEventDt;
                         }
-                        return eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority());
+                        return comparedEventPriority;
                     }
                     return -1;
                 }
-                else if(eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE)){
+                else if(eventTwoIsActive){
                     return 1;
                 }
-                return 0;
+                else{
+                    return comparedEventDt;
+                }
             }
                 
         }         
