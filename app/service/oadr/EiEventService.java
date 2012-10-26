@@ -172,9 +172,22 @@ public class EiEventService{
             }
             Collections.sort(oadrEvents, new OadrEventComparator());
             //oadrEvents = listReduce(oadrEvents);
+            Logger.info("Here");
+            if(oadrRequestEvent.getEiRequestEvent().getReplyLimit() != null){
+                oadrEvents = removeEventsOverLimit(oadrEvents, oadrRequestEvent.getEiRequestEvent().getReplyLimit().intValue());
+            }
+            Logger.info("OadrSize is - " + oadrEvents.size());
             oadrDistributeEvent.withOadrEvents(oadrEvents);
         }
         return oadrDistributeEvent;
+    }
+    
+    public static ArrayList<OadrEvent> removeEventsOverLimit(List<OadrEvent> events, int replyLimit){
+        ArrayList<OadrEvent> returnList = new ArrayList<OadrEvent>();
+        for(int i = 0; i < replyLimit && i < events.size(); i++){
+            returnList.add(events.get(i));
+        }
+        return returnList;
     }
     
     /**
