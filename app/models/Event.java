@@ -4,10 +4,14 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.validation.Valid;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -23,14 +27,18 @@ import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiEventSignal;
 import org.enernoc.open.oadr2.model.EiEventSignals;
 import org.enernoc.open.oadr2.model.EventDescriptor;
+import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
+import org.enernoc.open.oadr2.model.MarketContext;
 import org.enernoc.open.oadr2.model.Properties;
 
 import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
+import play.db.jpa.JPA;
+import play.db.jpa.Transactional;
 
 public class Event{
 	
@@ -63,6 +71,9 @@ public class Event{
 	public Map<String, String> statusTypes;
 	
 	private EiEvent eiEvent;
+	
+    static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
+    static EntityManager entityManager = entityManagerFactory.createEntityManager();
 	
 	//constructor for the blank form
 	public Event(){
@@ -346,6 +357,8 @@ public class Event{
 		return returnMinutes;	
 	}
 	
+	
+	
 	public String displayReadableDuration(String s){
 		return "" + minutesFromXCal(s);
 	}
@@ -391,6 +404,9 @@ public class Event{
 		if(!startIsBeforeEnd(startDate, startTime, endDate, endTime)){
 			return "End date and time needs to occur after start date and time.";
 		}
+		if(isConflicting()){
+		    return "Event overlaps with another within the same market context.";
+		}
 		
 		return null;
 	}
@@ -402,9 +418,63 @@ public class Event{
 		return dtStart.getValue().toGregorianCalendar().getTimeInMillis() <= dtEnd.getValue().toGregorianCalendar().getTimeInMillis();	
 	}
 	
-	public void convertDateTimeToJoda(){
-	    
-	}
+	@SuppressWarnings("unchecked")
+    @Transactional
+    public boolean isConflicting(){
+        Map<String, EiEvent> eventMap = new HashMap<String, EiEvent>();
+        EiEvent quasiEvent = getQuasiEvent();
+        eventMap.put(quasiEvent.getEventDescriptor().getEiMarketContext().getMarketContext().getValue(), quasiEvent);
+        List<EiEvent> eiEvents = entityManager.createQuery("FROM EiEvent").getResultList();
+        for(EiEvent event : eiEvents){
+            String marketContext = event.getEventDescriptor().getEiMarketContext().getMarketContext().getValue();
+            XMLGregorianCalendar eventOneStartDt = (XMLGregorianCalendar)event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().clone();
+            XMLGregorianCalendar eventOneEndDt = (XMLGregorianCalendar)event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().clone();
+            if(eventMap.containsKey(marketContext)){
+                EiEvent mappedEvent = eventMap.get(marketContext);
+                eventOneEndDt.add(getDuration(event));
+                XMLGregorianCalendar eventTwoStartDt = (XMLGregorianCalendar)eventMap.get(marketContext).getEiActivePeriod().getProperties()
+                        .getDtstart().getDateTime().getValue().clone();
+                XMLGregorianCalendar eventTwoEndDt = (XMLGregorianCalendar)eventMap.get(marketContext).getEiActivePeriod().getProperties()
+                        .getDtstart().getDateTime().getValue().clone();
+                eventTwoEndDt.add(getDuration(mappedEvent));
+                if((eventOneStartDt.compare(eventTwoStartDt) >= 0 && eventOneStartDt.compare(eventTwoEndDt) == -1)
+                        || (eventOneEndDt.compare(eventTwoStartDt) >= 0 && eventOneStartDt.compare(eventTwoEndDt) == -1)){
+                    return true;
+                }
+                
+            }
+            else{
+                eventMap.put(marketContext, event);
+            }
+        }
+        return false;
+    }
+	
+    public static Duration getDuration(EiEvent event){
+        DatatypeFactory df = null;
+        try {
+            df = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e) {
+          e.printStackTrace();
+        }
+        return df.newDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
+    }
+    
+    public EiEvent getQuasiEvent(){
+        return new EiEvent()
+            .withEventDescriptor(new EventDescriptor()
+                    .withEventID(eventID)
+                    .withEiMarketContext(new EiMarketContext()
+                            .withMarketContext(new MarketContext()
+                                    .withValue(entityManager.find(Program.class, Long.parseLong(marketContext)).getProgramName()))))
+            .withEiActivePeriod(new EiActivePeriod()
+                    .withProperties(new Properties()
+                            .withDtstart(new Dtstart()
+                                    .withDateTime(createDateTime(this.startDate, this.startTime)))
+                                    .withDuration(new DurationPropType()
+                                            .withDuration(new DurationValue()
+                                                    .withValue(createXCalString(getMinutesDuration()))))));
+    }
 
     public String getMarketContext() {
         return marketContext;

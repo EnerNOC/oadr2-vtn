@@ -29,7 +29,8 @@
                 <div class="page-header">
                 <b>@title</b>                
                 	@if(nav == "Events"){
-                    	<a href=@routes.Events.blankEvent() id="add" class="btn success")>Create Event</a>
+                		<a href=@routes.Events.killAllHumans() id="add" class="btn error")>Kill All Humans</a>
+                    	<a href=@routes.Events.blankEvent() id="add" class="btn success")>Create Event</a>&nbsp
                     }
                     @if(nav == "Programs"){
                     	<a href=@routes.Programs.blankProgram() id="add" class="btn success")>Create Program</a>

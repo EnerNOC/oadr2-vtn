@@ -105,6 +105,9 @@ public class Events extends Controller {
     	          .withCreatedDateTime(new DateTime().withValue(xCalendar));
     	      if(!e.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.CANCELLED))
     	          e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
+    	          for(EiEventSignal eventSignal : e.getEiEventSignals().getEiEventSignals()){
+    	              eventSignal.setCurrentValue(new CurrentValue().withPayloadFloat(new PayloadFloat().withValue(updateSignalPayload(e))));
+    	          }
     	  }
     	  
     	  return ok(views.html.events.render(eiEvents, new Event()));
@@ -253,6 +256,25 @@ public class Events extends Controller {
     	  }	  
       }
       
+      @SuppressWarnings("unchecked")
+      @Transactional
+      /**
+       * "Hey baby, wanna kill all humans?" - Bender Bending Rodriguez
+       * Clears all entries in the EiEvent and VENStatus tables!
+       * @return Redirect to the Events display page
+       */
+      public static Result killAllHumans(){
+          List<EiEvent> events = JPA.em().createQuery("FROM EiEvent").getResultList();
+          List<VENStatus> venStatuses = JPA.em().createQuery("FROM VENStatus").getResultList();
+          for(EiEvent event : events){
+              JPA.em().remove(event);
+          }
+          for(VENStatus venStatus : venStatuses){
+              JPA.em().remove(venStatus);
+          }
+          return redirect(routes.Events.events());
+      }
+      
       @Transactional
       public static EventStatusEnumeratedType updateStatus(EiEvent event, int intervals){
           DatatypeFactory df = null;
@@ -347,6 +369,7 @@ public class Events extends Controller {
           } catch (DatatypeConfigurationException e) {
             e.printStackTrace();
           }
+          //Potentially delete the Event.minutes static reference, as I'm fairly certain df.newDuration takes the .getValue() string as an arg
           return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
       }
       

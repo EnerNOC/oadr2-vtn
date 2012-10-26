@@ -25,6 +25,9 @@ POST    /events/:id/delete		controllers.Events.deleteEvent(id:Long)
 # Cancel Event
 POST /program/:id/cancel		controllers.Events.cancelEvent(id:Long)
 
+# Clear All Events/Statuses
+GET /killallhumans		controllers.Events.killAllHumans()
+
 # Program List
 GET /programs					controllers.Programs.programs()
 

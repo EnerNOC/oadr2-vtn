@@ -4,16 +4,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
 
+import models.Event;
 import models.VEN;
 import models.VENStatus;
 
+import org.enernoc.open.oadr2.model.DateTime;
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
@@ -88,6 +96,7 @@ public class EiEventService{
     @SuppressWarnings("unchecked")
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
+        
         /**
          * Comparator to determine ordering of the OadrEvents
          * Expected ordering is
@@ -98,9 +107,9 @@ public class EiEventService{
          * @author jlajoie
          *
          */
+        
         class OadrEventComparator implements Comparator<OadrEvent>{
-            public int compare(OadrEvent eventOne, OadrEvent eventTwo){
-                
+            public int compare(OadrEvent eventOne, OadrEvent eventTwo){                
                 boolean eventOneIsActive = eventOne.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE);
                 boolean eventTwoIsActive = eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE);
                 int comparedEventPriority = eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority());
@@ -122,8 +131,7 @@ public class EiEventService{
                 else{
                     return comparedEventDt;
                 }
-            }
-                
+            }                
         }         
         
         EiResponse eiResponse = new EiResponse(); 
@@ -133,9 +141,7 @@ public class EiEventService{
         else{
             eiResponse
                 .withRequestID("TH_REQUEST_ID");
-        }
-        
-        //TODO Need to handle non 200 responses
+        }        
         eiResponse.setResponseCode(new ResponseCode("200"));    
         
         createNewEm();
@@ -157,19 +163,54 @@ public class EiEventService{
                         .getResultList()){
                     events.add(event);
             }            
-            Logger.info(events.size() + "");
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             for(EiEvent e : events){
-                Logger.info("Event - " + e.getEventDescriptor().getEventID());
                 oadrEvents.add(new OadrEvent()
                     .withEiEvent(e)
                     .withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
                 );
             }
             Collections.sort(oadrEvents, new OadrEventComparator());
+            //oadrEvents = listReduce(oadrEvents);
             oadrDistributeEvent.withOadrEvents(oadrEvents);
         }
         return oadrDistributeEvent;
+    }
+    
+    /**
+     * 
+     * @param oadrEvents - List of OadrEvent containing all events within Market Contexts
+     * @return - The reduced ArrayList containing no overlapping events within the same MarketContext
+     */
+    public static ArrayList<OadrEvent> listReduce(List<OadrEvent> oadrEvents){
+        Map<String, OadrEvent> eventMap = new HashMap<String, OadrEvent>();
+        for(OadrEvent event : oadrEvents){
+            String marketContext = event.getEiEvent().getEventDescriptor().getEiMarketContext().getMarketContext().getValue();
+            XMLGregorianCalendar eventOneStartDt = event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue();
+            XMLGregorianCalendar eventOneEndDt = event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue();
+            if(eventMap.containsKey(marketContext)){
+                OadrEvent mappedEvent = eventMap.get(marketContext);
+                eventOneEndDt.add(getDuration(event.getEiEvent()));
+                //TODO Do stuff to check if they overlap, if they do then add the earlier start date ex first date + duration compared to second date == 1 make sure the first one is added, else add the second one
+                XMLGregorianCalendar eventTwoDt = eventMap.get(marketContext).getEiEvent().getEiActivePeriod().getProperties()
+                        .getDtstart().getDateTime().getValue();
+                int comparedDt = eventOneEndDt.compare(eventTwoDt);
+                Logger.info("Compared DT is: " + comparedDt);
+                if(comparedDt > 0){
+                    //return the lesser start date
+                    if(eventOneStartDt.compare(eventTwoDt) != 1){
+                        Logger.info("Replacing the event in the map");
+                        eventMap.put(marketContext, event);
+                    }
+                }
+                
+            }
+            else{
+                Logger.info("Throwing it in da map");
+                eventMap.put(marketContext, event);
+            }
+        }
+        return new ArrayList<OadrEvent>(eventMap.values());
     }
         
     @SuppressWarnings("unchecked")
@@ -200,8 +241,6 @@ public class EiEventService{
                 List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
                         .setParameter("market", venStatus.getProgram())
                         .getResultList();
-                
-                Logger.info("Events size - " + events.size());
                 
                 if(customer != null){  
                     for(EiEvent event : events){
@@ -261,6 +300,14 @@ public class EiEventService{
         }
     }
     
-    
+    public static Duration getDuration(EiEvent event){
+        DatatypeFactory df = null;
+        try {
+            df = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e) {
+          e.printStackTrace();
+        }
+        return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
+    }
     
 }
