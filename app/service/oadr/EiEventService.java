@@ -21,9 +21,9 @@ import models.Event;
 import models.VEN;
 import models.VENStatus;
 
-import org.enernoc.open.oadr2.model.DateTime;
 import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
+import org.enernoc.open.oadr2.model.EventResponses.EventResponse;
 import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.OadrCreatedEvent;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
@@ -81,16 +81,35 @@ public class EiEventService{
     
     @Transactional
     public static OadrResponse handleOadrCreated(OadrCreatedEvent oadrCreatedEvent){
-        persistFromCreatedEvent(oadrCreatedEvent);
-        createNewEm();
-        entityManager.persist(oadrCreatedEvent);
-        entityManager.getTransaction().commit();
-        
-        return new OadrResponse()
-            .withEiResponse(new EiResponse()
-                .withRequestID("TH_REQUEST_ID")
-                .withResponseCode(new ResponseCode("200"))
-                .withResponseDescription("Optional description!")); 
+        String responseCode = verifyOadrCreated(oadrCreatedEvent);
+        if(oadrCreatedEvent.getEiCreatedEvent().getEiResponse().getResponseCode().getValue().charAt(0) == '2'){
+            persistFromCreatedEvent(oadrCreatedEvent);
+            createNewEm();
+            entityManager.persist(oadrCreatedEvent);
+            entityManager.getTransaction().commit();
+            
+            return new OadrResponse()
+                .withEiResponse(new EiResponse()
+                    .withRequestID("TH_REQUEST_ID")
+                    .withResponseCode(new ResponseCode(responseCode))
+                    .withResponseDescription("Optional description!"));
+        }
+        else{
+            return new OadrResponse()
+                .withEiResponse(new EiResponse()
+                        .withRequestID("TH_REQUEST_ID")
+                        .withResponseCode(new ResponseCode("200"))
+                        .withResponseDescription("Incoming event contained errors"));
+        }
+    }
+    
+    public static String verifyOadrCreated(OadrCreatedEvent oadrCreatedEvent){
+        if(oadrCreatedEvent.getEiCreatedEvent().getEventResponses() != null){
+            return "200";
+        }
+        else{
+            return "400";
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -280,7 +299,11 @@ public class EiEventService{
                 .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
                 .getResultList();
         for(VENStatus status : venStatuses){
-            status.setOptStatus(createdEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getOptType().toString());
+            if(createdEvent.getEiCreatedEvent().getEventResponses() != null){
+                for(EventResponse eventResponse : createdEvent.getEiCreatedEvent().getEventResponses().getEventResponses()){
+                    status.setOptStatus(eventResponse.getOptType().toString());
+                }
+            }
             status.setTime(new Date());
             createNewEm();
             entityManager.merge(status);    
