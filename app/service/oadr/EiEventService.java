@@ -103,13 +103,22 @@ public class EiEventService{
         }
     }
     
+    @SuppressWarnings("unchecked")
+    @Transactional
     public static String verifyOadrCreated(OadrCreatedEvent oadrCreatedEvent){
+        createNewEm();
         if(oadrCreatedEvent.getEiCreatedEvent().getEventResponses() != null){
-            return "200";
+            String eventId = oadrCreatedEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getQualifiedEventID().getEventID();
+            long modificationNumber = oadrCreatedEvent.getEiCreatedEvent().getEventResponses().getEventResponses().get(0).getQualifiedEventID().getModificationNumber();
+            ArrayList<EiEvent> events = (ArrayList<EiEvent>) entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eventID = :event AND event.eventDescriptor.modificationNumber = :modNumber")
+                    .setParameter("event", eventId)
+                    .setParameter("modNumber", modificationNumber)
+                    .getResultList();
+            if(events.size() > 0){
+                return "200";
+            }
         }
-        else{
-            return "400";
-        }
+        return "400";
     }
     
     @SuppressWarnings("unchecked")
@@ -133,8 +142,7 @@ public class EiEventService{
                 boolean eventTwoIsActive = eventTwo.getEiEvent().getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE);
                 int comparedEventPriority = eventOne.getEiEvent().getEventDescriptor().getPriority().compareTo(eventTwo.getEiEvent().getEventDescriptor().getPriority());
                 int comparedEventDt = eventOne.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
-                        eventTwo.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
-                
+                        eventTwo.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());                
                 if(eventOneIsActive){
                     if(eventTwoIsActive){
                         if(comparedEventPriority == 0){
@@ -160,7 +168,8 @@ public class EiEventService{
         else{
             eiResponse
                 .withRequestID("TH_REQUEST_ID");
-        }        
+        }
+        //TODO see if setting this to 200 breaks the 0710
         eiResponse.setResponseCode(new ResponseCode("200"));    
         
         createNewEm();
@@ -177,11 +186,11 @@ public class EiEventService{
             .getResultList();        
         List<EiEvent> events = new ArrayList<EiEvent>();
         for(VEN ven : vens){
-                for(EiEvent event : (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
-                        .setParameter("market", ven.getProgramId())
-                        .getResultList()){
-                    events.add(event);
-            }            
+            for(EiEvent event : (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
+                    .setParameter("market", ven.getProgramId())
+                    .getResultList()){
+                events.add(event);
+            }         
             List<OadrEvent> oadrEvents = new ArrayList<OadrEvent>();
             for(EiEvent e : events){
                 oadrEvents.add(new OadrEvent()
@@ -191,11 +200,9 @@ public class EiEventService{
             }
             Collections.sort(oadrEvents, new OadrEventComparator());
             //oadrEvents = listReduce(oadrEvents);
-            Logger.info("Here");
             if(oadrRequestEvent.getEiRequestEvent().getReplyLimit() != null){
                 oadrEvents = removeEventsOverLimit(oadrEvents, oadrRequestEvent.getEiRequestEvent().getReplyLimit().intValue());
             }
-            Logger.info("OadrSize is - " + oadrEvents.size());
             oadrDistributeEvent.withOadrEvents(oadrEvents);
         }
         return oadrDistributeEvent;
@@ -227,18 +234,15 @@ public class EiEventService{
                 XMLGregorianCalendar eventTwoDt = eventMap.get(marketContext).getEiEvent().getEiActivePeriod().getProperties()
                         .getDtstart().getDateTime().getValue();
                 int comparedDt = eventOneEndDt.compare(eventTwoDt);
-                Logger.info("Compared DT is: " + comparedDt);
                 if(comparedDt > 0){
                     //return the lesser start date
                     if(eventOneStartDt.compare(eventTwoDt) != 1){
-                        Logger.info("Replacing the event in the map");
                         eventMap.put(marketContext, event);
                     }
                 }
                 
             }
             else{
-                Logger.info("Throwing it in da map");
                 eventMap.put(marketContext, event);
             }
         }
@@ -268,8 +272,7 @@ public class EiEventService{
                     .getResultList();
             for(VEN customer : customers){
                 venStatus.setProgram(customer.getProgramId());
-                
-                
+                Logger.info("Above testing the EiEvent query");
                 List<EiEvent> events = (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
                         .setParameter("market", venStatus.getProgram())
                         .getResultList();
@@ -279,7 +282,6 @@ public class EiEventService{
                         venStatus.setEventID(event.getEventDescriptor().getEventID());
                         venStatus.setOptStatus("Pending 2");
                         createNewEm();
-                        Logger.info("VenStatus - " + venStatus.getVenID());
                         entityManager.merge(venStatus);
                         entityManager.getTransaction().commit();
                     }
@@ -293,7 +295,6 @@ public class EiEventService{
     public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
         createNewEm();
         List<VENStatus> venStatuses = new ArrayList<VENStatus>();
-        Logger.info("VEN - " + createdEvent.getEiCreatedEvent().getVenID());
         venStatuses = (List<VENStatus>)entityManager.createQuery("SELECT status FROM VENStatus " +
                 "status WHERE status.venID = :ven")
                 .setParameter("ven", createdEvent.getEiCreatedEvent().getVenID())
