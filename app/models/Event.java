@@ -40,6 +40,13 @@ import play.data.validation.Constraints.Required;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 
+/**
+ * A wrapper class to use the Play specific binding to cast 
+ * a form to an EiEvent as well as manage the event itself
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class Event{
 	
 	@Required(message = "Must enter an Event ID")
@@ -62,59 +69,46 @@ public class Event{
 	@Valid
 	private long intervals = 1;
 	@Required(message = ("Must select a program, if one is not available please create one."))
-	private String marketContext;
-	
-	
+	private String marketContext;	
 	private String duration;	
-	private String start;
-	
-	public Map<String, String> statusTypes;
-	
-	private EiEvent eiEvent;
-	
+	private String start;	
+	public Map<String, String> statusTypes;	
+	private EiEvent eiEvent;	
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
 	
-	//constructor for the blank form
+    /**
+     * Default constructor for an Event to initialize and set the date format
+     */
 	public Event(){
 		DateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy");
 		Date date = new Date();
 		startDate = dateFormat.format(date);
 		endDate = dateFormat.format(date);
-		createStatusTypes();
 	}
 	
-	//constructor for the edit form 
-	public Event(EiEvent e){
-		createStatusTypes();
-		eiEvent = e;
-		this.eventID = e.getEventDescriptor().getEventID();
-		this.priority = e.getEventDescriptor().getPriority();
-		this.status = e.getEventDescriptor().getEventStatus().value();
-		//TODO This line below could be a bit picky come time for Edit
-		this.start = e.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString();
-		this.duration = e.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
+	/**
+	 * Modified constructor which sets the current EiEvent to an Event for
+	 * editing purposes
+	 * 
+	 * @param event - the EiEvent to be cast to an Event wrapper class
+	 */
+	public Event(EiEvent event){
+		eiEvent = event;
+		this.eventID = event.getEventDescriptor().getEventID();
+		this.priority = event.getEventDescriptor().getPriority();
+		this.status = event.getEventDescriptor().getEventStatus().value();
+		this.start = event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString();
+		this.duration = event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
 		setStartDateTime(this.start);
 		setEndDateTime();
 	}
 	
-	// returns the map for the @select statement for forms in .scala.html
-	public Map<String, String> getStatusTypes(){
-		return this.statusTypes;
-	}
-	
-	// creates a map to send to the forms for use in the @select statement
-	public void createStatusTypes(){
-		statusTypes = new HashMap<String, String>();
-		statusTypes.put("active", "Active");
-		statusTypes.put("cancelled", "Cancelled");
-		statusTypes.put("completed", "Completed");
-		statusTypes.put("far", "Far");
-		statusTypes.put("near", "Near");
-		statusTypes.put("none", "None");
-	}
-	
-	//returns an EiEvent based on the filled EiEventForm to be persisted
+	/**
+	 * Unwraps the fields of the Event form to an EiEvent object
+	 * 
+	 * @return the unwrapped EiEvent with certain fields from the form filled
+	 */
 	public EiEvent toEiEvent(){
 		duration = createXCalString(getMinutesDuration());
 		this.start = createXMLTime(startDate, startTime);
@@ -140,13 +134,8 @@ public class Event{
 	  							.withIntervals(new Intervals()
   									.withIntervals(new Interval()
   									.withDuration( new DurationPropType(new DurationValue(duration)))))));
-	}
+	}	
 	
-	public EiEvent getEiEvent(){
-		return this.eiEvent;
-	}
-	
-	//sets the values in the getable event to a parameter EiEvent
 	public void copyEvent(EiEvent e){
 		eiEvent = e;
 		eiEvent.getEventDescriptor().setEventID(this.eventID);

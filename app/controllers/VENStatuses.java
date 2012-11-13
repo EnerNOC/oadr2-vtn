@@ -4,10 +4,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-
 import models.VENStatus;
 
 import org.enernoc.open.oadr2.model.EiEvent;
@@ -21,14 +17,32 @@ import service.oadr.EiEventService;
 
 import com.google.inject.Inject;
 
+/**
+ * Controller to handle the XMPP and HTTP services as well as the VENStatuses
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class VENStatuses extends Controller{
-    
-    static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
-    static EntityManager entityManager = entityManagerFactory.createEntityManager();
-	
+    	
 	@Inject static EiEventService eiEventService;
 	@Inject static XmppService xmppService;
-			
+	
+    /**
+     * Base method called to access the default page for the VENStatuses controller
+     *  
+     * @return a redirect to the venStatuses() call as to render the default page
+     */
+    public static Result index() {
+        return redirect(routes.VENStatuses.venStatuses(""));
+    }
+    
+	/**
+	 * Default method to render the page for the VENStatus table
+	 * 
+	 * @param program - The program specific to the Events to be displayed
+	 * @return the default rendered page for VENStatus display and deletion
+	 */
 	@SuppressWarnings("unchecked")
     @Transactional
 	public static Result venStatuses(String program) {
@@ -36,7 +50,13 @@ public class VENStatuses extends Controller{
 		return ok(views.html.venStatuses.render(program, programs));
 	}
 	
-	@SuppressWarnings({ "unchecked" })
+	/**
+	 * Function called to have the display table rendered via AJAX calls
+	 * 
+	 * @param program - The program specific to the Events to be displayed
+	 * @return the rendered page for the VENStatus based on the program
+	 */
+	@SuppressWarnings("unchecked")
     @Transactional
 	public static Result renderAjaxTable(String program){
 	    List<VENStatus> listStatusObjects;
@@ -48,25 +68,30 @@ public class VENStatuses extends Controller{
 	    }
         else{
             listStatusObjects = JPA.em().createQuery("FROM VENStatus").getResultList();
-        }
-	    
+        }	    
+	    /**
+	     * Comparator to sort the list of VENStatuses based on last response time
+	     * 
+	     * @author Jeff LaJoie
+	     *
+	     */
 		class StatusObjectComparator implements Comparator<VENStatus>{
 			public int compare(VENStatus statusOne, VENStatus statusTwo){
 				return statusTwo.getTime().compareTo(statusOne.getTime());
 			}
 		}				
 		Collections.sort(listStatusObjects, new StatusObjectComparator());		
-		return ok(views.html.venStatusTable.render(listStatusObjects, program));
+	    return ok(views.html.venStatusTable.render(listStatusObjects, program));
 	}
 	
-    @Transactional
-	public static Result sendXMPPCreated(String event){
-        return redirect(routes.VENStatuses.venStatuses(event));
-	}
-	
-	
+	/**
+	 * Deletes a VENStatus based on the active program and the ID of the VENStatus
+	 * 
+	 * @param program - the selected program
+	 * @param id - the database ID of the VENStatus to be deleted
+	 * @return a redirect to the VENStatus default page without the deleted VENStatus
+	 */
 	@Transactional
-	//Deletes an event based on the id
 	public static Result deleteStatus(String program, Long id){
 	    JPA.em().remove(JPA.em().find(VENStatus.class, id));
 	    return redirect(routes.VENStatuses.venStatuses(program));

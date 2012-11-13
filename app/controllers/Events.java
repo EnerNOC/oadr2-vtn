@@ -51,7 +51,6 @@ import org.enernoc.open.oadr2.model.SignalPayload;
 import org.enernoc.open.oadr2.model.SignalTypeEnumeratedType;
 import org.enernoc.open.oadr2.model.Uid;
 
-import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -61,11 +60,16 @@ import play.mvc.Result;
 import service.PushService;
 import service.XmppService;
 
+/**
+ * Events controller to manage all Event objects created
+ * and the display page for those objects
+ * 
+ * @author Jeff LaJoie
+ */
 public class Events extends Controller {
       
       @Inject static XmppService xmppService;
       @Inject static PushService pushService;
-    
       static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
       static ObjectFactory objectFactory = new ObjectFactory();
       static EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -78,15 +82,30 @@ public class Events extends Controller {
           }
       }
       
-      //redirects to the events page
+      /**
+       * Base return for the default rendering of the Events page
+       * 
+       * @return a redirect for the routes.Events.events() route
+       */
       public static Result index() {
     	  return redirect(routes.Events.events());
       }
       
-      // requests page, displays all events currently in the database
+      /**
+       * The default page render for Events, inclusive of ordering of EiEvents
+       * based on their start DateTime, in ascending order
+       * 
+       * @return the rendered views.html.events page with a sorted list of EiEvents
+       * from the EiEventComparator class
+       */
       @SuppressWarnings("unchecked")
       @Transactional
       public static Result events(){
+          /**
+           * Comparator to return the ordering of the two EiEvents based on start time
+           * 
+           * @author Jeff LaJoie       
+           */
     	  class EiEventComparator implements Comparator<EiEvent>{
     		  public int compare(EiEvent eventOne, EiEvent eventTwo){
     			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
@@ -108,18 +127,28 @@ public class Events extends Controller {
     	          for(EiEventSignal eventSignal : e.getEiEventSignals().getEiEventSignals()){
     	              eventSignal.setCurrentValue(new CurrentValue().withPayloadFloat(new PayloadFloat().withValue(updateSignalPayload(e))));
     	          }
-    	  }
-    	  
+    	  }    	  
     	  return ok(views.html.events.render(eiEvents, new Event()));
       }
       
+      /**
+       * The default page render for new events to be created based on
+       * the file at views.html.newEvent
+       * 
+       * @return the rendered page to create an event, with all fields vacant
+       */
       public static Result blankEvent(){
     	  Event newForm = new Event();
     	  return ok(views.html.newEvent.render(form(Event.class).fill(newForm), newForm, makeProgramMap()));
       }    
-    
+
+      /**
+       * Method called on the newEvent page when the Create this event button is submitted
+       * 
+       * @return a redirect to the VENStatus page based on the EventID of the created Event
+       * @throws JAXBException
+       */
       @Transactional
-      //Method to create a new event once on the newEvent page
       public static Result newEvent() throws JAXBException{
     	  Form<Event> filledForm = form(Event.class).bindFromRequest();
           if(filledForm.hasErrors()) {
@@ -136,7 +165,13 @@ public class Events extends Controller {
     		  return redirect(routes.VENStatuses.venStatuses(newEvent.getEventDescriptor().getEventID()));
     	  }
       }
-      
+
+      /**
+       * On the Event display page will take the EventStatus of the event and set it to CANCELLED
+       * 
+       * @param id - The database ID of the Event to be cancelled
+       * @return a redirect to the Events page, which should show the updated EventStatus of the cancelled event
+       */
       @Transactional
       public static Result cancelEvent(Long id){
           EiEvent event = JPA.em().find(EiEvent.class, id);
@@ -150,15 +185,26 @@ public class Events extends Controller {
           }
           return redirect(routes.Events.events());
       }
-      
+
+      /**
+       * On the Event display page, will take the Event that is selected and remove it from the database
+       * 
+       * @param id - database ID of the Event to be deleted
+       * @return a redirect to the Events page which should show the list of Events without the deleted event
+       */
       @Transactional
-      //Deletes an event based on the id
       public static Result deleteEvent(Long id){
     	  JPA.em().remove(JPA.em().find(EiEvent.class, id));
           flash("success", "Event has been deleted");
           return redirect(routes.Events.events());
       }
-      
+
+      /**
+       * Called when the Save this event button is pressed on the Edit event form
+       * 
+       * @param id - database ID of the Event to be modified
+       * @return a redirect to the Events page which should show the list of Events with the modified event
+       */
       @Transactional
       public static Result updateEvent(Long id){
     	  Form<Event> eventForm = form(Event.class).bindFromRequest();
@@ -172,24 +218,20 @@ public class Events extends Controller {
           calendar.setTime(currentDate);
           XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
           xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
-          
           JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
-          
           String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
           Intervals intervals = new Intervals();
           ArrayList<Interval> intervalList = new ArrayList<Interval>();
-          
           for(int i=0; i < newEventForm.getIntervals(); i++){
               intervalList.add(new Interval()
                   .withDuration(new DurationPropType()
                       .withDuration(new DurationValue()
-                          .withValue(formatDuration(getDuration(event)))))
+                          .withValue(formatDuration(getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue())))))
                   .withUid(new Uid()
                       .withText("" + i))
                   .withStreamPayloadBase(signalPayload));
           }
           intervals.setIntervals(intervalList);
-                    
           event.setEiActivePeriod(new EiActivePeriod()
                   .withProperties(new Properties()
                       .withDtstart(new Dtstart()
@@ -197,7 +239,7 @@ public class Events extends Controller {
                               .withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
                       .withDuration(new DurationPropType()
                           .withDuration(new DurationValue()
-                              .withValue(formatDuration(getDuration(event, (int)newEventForm.getIntervals())))))
+                              .withValue(formatDuration(getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), (int)newEventForm.getIntervals())))))
                       .withTolerance(new Tolerance()
                           .withTolerate(new Tolerate()
                               .withStartafter(new DurationValue()
@@ -227,26 +269,36 @@ public class Events extends Controller {
           .withEiEventSignals(new EiEventSignal()
                   .withCurrentValue(new CurrentValue()
                           .withPayloadFloat(new PayloadFloat()
-                                  .withValue(updateSignalPayload(event)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                                  .withValue(updateSignalPayload(event))))
                   .withIntervals(new Intervals()
                       .withIntervals(intervalList))
                   .withSignalID("TH_SIGNAL_ID")
                   .withSignalName("simple")
                   .withSignalType(SignalTypeEnumeratedType.LEVEL)));
-          
           JPA.em().merge(event);
           flash("success", "Event has been updated");
     	  return redirect(routes.Events.events());
       }
-      
+
+      /**
+       * On the Event display page, is called when one of the Edit buttons are pressed
+       * (NOTE: Program and DateTimes are NOT saved when modifying an event and must always be re-entered)
+       * 
+       * @param id - database ID of the Event to be modified
+       * @return a render of the Event form page with the information contained
+       */
       @Transactional
       public static Result editEvent(Long id){
     	  Event form = new Event(JPA.em().find(EiEvent.class, id));
     	  return ok(views.html.editEvent.render(id, form(Event.class).fill(form), form, makeProgramMap()));
       }
     
-      //Takes the error Map with a string as a key and adds
-      //the key and value to the flash() scope to be accessed
+      /**
+       * Takes the error Map with a string as a key and adds
+       * the key and value to the flash() scope to be accessed
+       * 
+       * @param errors Map containing the List of errors and the key
+       */
       public static void addFlashError(Map<String, List<ValidationError>> errors){
     	  for(String key : errors.keySet()){
     		  List<ValidationError> currentError = errors.get(key);
@@ -255,26 +307,14 @@ public class Events extends Controller {
     		  }
     	  }	  
       }
-      
-      @SuppressWarnings("unchecked")
-      @Transactional
+
       /**
-       * "Hey baby, wanna kill all humans?" - Bender Bending Rodriguez
-       * Clears all entries in the EiEvent and VENStatus tables!
-       * @return Redirect to the Events display page
+       * Updates the EventStatus based on the current time and time of the event
+       * 
+       * @param event - the event to have the EventStatus updated
+       * @param intervals - the number of time intervals contained in the 
+       * @return the EventStatusEnumeratedType the EventStatus should be set to
        */
-      public static Result killAllHumans(){
-          List<EiEvent> events = JPA.em().createQuery("FROM EiEvent").getResultList();
-          List<VENStatus> venStatuses = JPA.em().createQuery("FROM VENStatus").getResultList();
-          for(EiEvent event : events){
-              JPA.em().remove(event);
-          }
-          for(VENStatus venStatus : venStatuses){
-              JPA.em().remove(venStatus);
-          }
-          return redirect(routes.Events.events());
-      }
-      
       @Transactional
       public static EventStatusEnumeratedType updateStatus(EiEvent event, int intervals){
           DatatypeFactory df = null;
@@ -297,7 +337,7 @@ public class Events extends Controller {
           DateTime rampUpTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           
           rampUpTime.getValue().add(getDuration(event.getEiActivePeriod().getProperties().getXEiRampUp().getDuration().getValue()));
-          Duration d = getDuration(event, intervals);
+          Duration d = getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), intervals);
           endTime.getValue().add(d);
                   
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
@@ -319,18 +359,34 @@ public class Events extends Controller {
           }
       }
       
+      /**
+       * Updates the SignalPayloadFloat based on the EventStatus contained in the EiEvent
+       * 
+       * @param event - Contains the EventStatus that determines the SignalPayload
+       * @return the SignalPayload as a float to be set in the construction of the EiEvent
+       */
       public static float updateSignalPayload(EiEvent event){
           if(event.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.ACTIVE))
               return 1;
           return 0;
       }
-      @SuppressWarnings("unchecked")
+      
+      /**
+       * Passes the VENs and event to the prepareVENs method
+       * 
+       * @param event - event to be used for getVENs and prepareVENs
+       */
       @Transactional
-      public static void populateFromPush(EiEvent e){
-          List<VEN> customers = getVENs(e);
-          prepareVENs(customers, e);
+      public static void populateFromPush(EiEvent event){
+          List<VEN> customers = getVENs(event);
+          prepareVENs(customers, event);
       }
-     
+
+      /**
+       * Converts the Program table to a Map usable by the Scala Helper function, /@Select
+       * 
+       * @return a usable Map<String, String> for the .scala.html files
+       */
       @SuppressWarnings("unchecked")
       @Transactional
       public static Map<String, String> makeProgramMap(){
@@ -341,20 +397,33 @@ public class Events extends Controller {
     	  }
     	  return programMap;
       }
-      
+
+      /**
+       * Retrieves the list of VENs where there is a URI (for VTN-Push) and that matches the marketContext matches
+       * the programID
+       * 
+       * @param event - The event with the marketContext to be compared to VENs
+       * @return a list of VENs that match the event's MarketContext and possess a clientURI
+       */
       @SuppressWarnings("unchecked")
-      public static List<VEN> getVENs(EiEvent e){
+      public static List<VEN> getVENs(EiEvent event){
           return JPA.em().createQuery("SELECT c from VEN c WHERE c.programId = :program and c.clientURI != ''")
-                  .setParameter("program", e.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
+                  .setParameter("program", event.getEventDescriptor().getEiMarketContext().getMarketContext().getValue())
                   .getResultList();
       }
       
-      public static void prepareVENs(List<VEN> vens, EiEvent e){
+      /**
+       * Prepares the VENs by creating a VENStatus object for each and setting the OptStatus to Pending 1
+       * 
+       * @param vens - List of VENs to be traversed and will be used to construct a VENStatus object
+       * @param event - Event containing the EventID which will be used for construction of a VENStatus object
+       */
+      public static void prepareVENs(List<VEN> vens, EiEvent event){
           for(VEN v : vens){
               VENStatus venStatus = new VENStatus();
               venStatus.setOptStatus("Pending 1");
               venStatus.setRequestID(v.getClientURI());
-              venStatus.setEventID(e.getEventDescriptor().getEventID());
+              venStatus.setEventID(event.getEventDescriptor().getEventID());
               venStatus.setProgram(v.getProgramId());
               venStatus.setVenID(v.getVenID());
               venStatus.setTime(new Date());
@@ -362,28 +431,30 @@ public class Events extends Controller {
           }    
       }
       
-      public static Duration getDuration(EiEvent event){
+      /**
+       * Converts an event to a duration based on the event and number of intervals
+       * 
+       * @param event - Duration that needs to be converted from String to Duration
+       * @param intervals - number of intervals to be serviced
+       * @return Duration from the event multiplied by the number of intervals
+       */
+      public static Duration getDuration(String event, int intervals){
           DatatypeFactory df = null;
           try {
               df = DatatypeFactory.newInstance();
           } catch (DatatypeConfigurationException e) {
             e.printStackTrace();
           }
-          //Potentially delete the Event.minutes static reference, as I'm fairly certain df.newDuration takes the .getValue() string as an arg
-          return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
-      }
-      
-      public static Duration getDuration(EiEvent event, int intervals){
-          DatatypeFactory df = null;
-          try {
-              df = DatatypeFactory.newInstance();
-          } catch (DatatypeConfigurationException e) {
-            e.printStackTrace();
-          }
-          Duration duration = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
+          Duration duration = df.newDuration(event);
           return duration.multiply(intervals);
       }
       
+      /**
+       * Converts an event string of DurationValue to a Duration
+       * 
+       * @param duration - Duration that needs to be converted from String to Duration
+       * @return Duration from the event
+       */
       public static Duration getDuration(String duration){
           DatatypeFactory df = null;
           try {
@@ -394,10 +465,22 @@ public class Events extends Controller {
           return df.newDuration(duration);
       }
       
+      /**
+       * Formats a duration to be acceptable by the schema validation
+       * 
+       * @param duration - the duration to be modified with the .000 truncated
+       * @return String with an acceptable duration value, minus the .000 precision
+       */
       public static String formatDuration(Duration duration){
           return duration.toString().replaceAll(".000", "");
       }
       
+      /**
+       * Takes the Event form pulled from the scala.html and crafts
+       * 
+       * @param newEventForm - the wrapper from the scala.html form for EiEvent
+       * @return the EiEvent built from the Event wrapper
+       */
       public static EiEvent buildEventFromForm(Event newEventForm){            
           Date currentDate = new Date();          
           GregorianCalendar calendar = new GregorianCalendar();
@@ -416,7 +499,7 @@ public class Events extends Controller {
               intervalList.add(new Interval()
                   .withDuration(new DurationPropType()
                       .withDuration(new DurationValue()
-                          .withValue(formatDuration(getDuration(newEvent)))))
+                          .withValue(formatDuration(getDuration(newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue())))))
                   .withUid(new Uid()
                       .withText("" + i))
                   .withStreamPayloadBase(signalPayload));
@@ -430,7 +513,7 @@ public class Events extends Controller {
                               .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
                       .withDuration(new DurationPropType()
                           .withDuration(new DurationValue()
-                              .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
+                              .withValue(formatDuration(getDuration(newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), (int)newEventForm.getIntervals())))))
                       .withTolerance(new Tolerance()
                           .withTolerate(new Tolerate()
                               .withStartafter(new DurationValue()
@@ -460,7 +543,7 @@ public class Events extends Controller {
                       .withEiEventSignals(new EiEventSignal()
                               .withCurrentValue(new CurrentValue()
                                       .withPayloadFloat(new PayloadFloat()
-                                              .withValue(updateSignalPayload(newEvent)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
+                                              .withValue(updateSignalPayload(newEvent))))
                               .withIntervals(new Intervals()
                                   .withIntervals(intervalList))
                               .withSignalID("TH_SIGNAL_ID")

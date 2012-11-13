@@ -114,8 +114,14 @@ public class EiEventService{
                     .setParameter("event", eventId)
                     .setParameter("modNumber", modificationNumber)
                     .getResultList();
-            if(events.size() > 0){
+            ArrayList<VENStatus> vens = (ArrayList<VENStatus>) entityManager.createQuery("SELECT venStatus FROM VENStatus venStatus WHERE venStatus.venID = :ven")
+                    .setParameter("ven", oadrCreatedEvent.getEiCreatedEvent().getVenID())
+                    .getResultList();
+            if(events.size() > 0 && vens.size() > 0){
                 return "200";
+            }
+            else if(vens.size() == 0){
+                return "409";
             }
         }
         return "400";
@@ -170,7 +176,7 @@ public class EiEventService{
                 .withRequestID("TH_REQUEST_ID");
         }
         //TODO see if setting this to 200 breaks the 0710
-        eiResponse.setResponseCode(new ResponseCode("200"));    
+        eiResponse.setResponseCode(new ResponseCode("409"));    
         
         createNewEm();
         entityManager.persist(oadrRequestEvent);  
@@ -186,6 +192,8 @@ public class EiEventService{
             .getResultList();        
         List<EiEvent> events = new ArrayList<EiEvent>();
         for(VEN ven : vens){
+            Logger.info("VEN is - " + ven.getVenID());
+            eiResponse.setResponseCode(new ResponseCode("200"));
             for(EiEvent event : (List<EiEvent>)entityManager.createQuery("SELECT event FROM EiEvent event WHERE event.eventDescriptor.eiMarketContext.marketContext.value = :market")
                     .setParameter("market", ven.getProgramId())
                     .getResultList()){
@@ -228,14 +236,10 @@ public class EiEventService{
             XMLGregorianCalendar eventOneStartDt = event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue();
             XMLGregorianCalendar eventOneEndDt = event.getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue();
             if(eventMap.containsKey(marketContext)){
-                OadrEvent mappedEvent = eventMap.get(marketContext);
-                eventOneEndDt.add(getDuration(event.getEiEvent()));
-                //TODO Do stuff to check if they overlap, if they do then add the earlier start date ex first date + duration compared to second date == 1 make sure the first one is added, else add the second one
-                XMLGregorianCalendar eventTwoDt = eventMap.get(marketContext).getEiEvent().getEiActivePeriod().getProperties()
-                        .getDtstart().getDateTime().getValue();
+                eventOneEndDt.add(getDuration(event.getEiEvent()));XMLGregorianCalendar eventTwoDt = 
+                        eventMap.get(marketContext).getEiEvent().getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue();
                 int comparedDt = eventOneEndDt.compare(eventTwoDt);
                 if(comparedDt > 0){
-                    //return the lesser start date
                     if(eventOneStartDt.compare(eventTwoDt) != 1){
                         eventMap.put(marketContext, event);
                     }

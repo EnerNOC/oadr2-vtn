@@ -33,8 +33,14 @@ public class EiEvents extends Controller{
     
     static EiEventService eiEventService = EiEventService.getInstance();
 
+    /**
+     * Returns a Result object that will be returned via the PlayFramework
+     * containing the payload based upon the incoming HTTP request
+     * 
+     * @return the Result to be rendered by PlayFramework 
+     * @throws JAXBException
+     */
     @Transactional
-    //convert to XML from eiEventService
     public static Result sendHttpResponse() throws JAXBException{
         Unmarshaller unmarshaller = jaxbManager.getContext().createUnmarshaller();
         Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(request().body().asRaw().asBytes()));
