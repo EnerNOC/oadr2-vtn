@@ -23,17 +23,9 @@
 	                '_label -> "Program", '_default -> "-- Choose a program --",
 	                '_showConstraints -> false
 	            )
-		    <!-- will eventually generate this ID -->
 		    <h3>Event Descriptor</h3>    
 				@inputText(eiEventsForm("eventID"), '_label -> "Event ID")
 				@inputText(eiEventsForm("priority"), '_label -> "Priority")
-				<!-- @select(
-                eiEventsForm("status"), 
-                options(eiEvent.statusTypes), 
-	                '_label -> "Status", '_default -> "-- Choose a status type --",
-	                '_showConstraints -> false
-	            )
-	            -->
 			
 			<h3>Active Period</h3>
 			@inputText(eiEventsForm("intervals"), '_label -> "Intervals")

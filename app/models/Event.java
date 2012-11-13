@@ -134,25 +134,7 @@ public class Event{
 	  							.withIntervals(new Intervals()
   									.withIntervals(new Interval()
   									.withDuration( new DurationPropType(new DurationValue(duration)))))));
-	}	
-	
-	public void copyEvent(EiEvent e){
-		eiEvent = e;
-		eiEvent.getEventDescriptor().setEventID(this.eventID);
-		eiEvent.getEventDescriptor().setPriority(this.priority);
-		eiEvent.getEventDescriptor().setEventStatus(EventStatusEnumeratedType.fromValue(this.status));
-		DatatypeFactory xmlDataTypeFac = null;
-	    try {
-	    	xmlDataTypeFac = DatatypeFactory.newInstance();
-		  } catch (DatatypeConfigurationException e1) {
-			  e1.printStackTrace();
-		  }
-		duration = createXCalString(getMinutesDuration());
-		this.start = createXMLTime(startDate, startTime);
-	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize(); //NEED TO ADD START
-		eiEvent.getEiActivePeriod().getProperties().getDtstart().setDateTime(new org.enernoc.open.oadr2.model.DateTime(startDttm));
-		eiEvent.getEiActivePeriod().getProperties().getDuration().setDuration(new DurationValue(this.duration));
-	}
+	}		
 	
 	//takes in a string of a date and string of time in specific form
 	// date = "MM-dd-yyyy" time = "h:mm" || time = "hh:mm"
