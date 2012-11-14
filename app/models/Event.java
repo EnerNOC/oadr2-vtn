@@ -136,23 +136,28 @@ public class Event{
   									.withDuration( new DurationPropType(new DurationValue(duration)))))));
 	}		
 	
-	//takes in a string of a date and string of time in specific form
-	// date = "MM-dd-yyyy" time = "h:mm" || time = "hh:mm"
-	//returns a string accepted by the XMLGregorianCalendar
+	/**
+	 * Takes in a string of a date and a string of time in specific format
+	 * and readies it for a string accepted by the XMLGregorianCalendar
+	 * 
+	 * @param date - "MM-dd-yyyy"
+	 * @param time - "h:mm" || "hh:mm"
+	 * @return a String accepted by the the XMLGregorianCalendar
+	 */
 	private String createXMLTime(String date, String time){
 		String year = date.substring(6, 10);
 		String month = date.substring(0, 2);
 		String day = date.substring(3, 5);
 		int hour = 0;
 		String tempString = time;
-		if(time.charAt(1) == ':'){ // if single digit time make 0X:XX
+		if(time.charAt(1) == ':'){
 			tempString = ("0" + time);
 		}
 		hour = Integer.parseInt(tempString.substring(0, 2));
-		if(hour == 12){ // if it's noon/midnight set hour to 0
+		if(hour == 12){
 			hour = 0;
 		}
-		if(time.charAt(6) == 'P'){ // add 12 hours for PM
+		if(time.charAt(6) == 'P'){
 			hour += 12;
 		}
 		String hourString = hour + "";
@@ -163,10 +168,14 @@ public class Event{
 		return year + "-" + month + "-" + day + "T" + hourString + ":" + minute + ":00";
 	}
 	
-	// returns a date time obgram from two string inputs
-	// date = "MM-dd-yyyy" time = "h:mm" || time = "hh:mm"
-	// time must not be 0 start for hours
-	public DateTime createDateTime(String date, String time){
+	/**
+	 * Returns a DateTime from two string inputs of date and time
+	 * 
+     * @param date - "MM-dd-yyyy"
+     * @param time - "h:mm" || "hh:mm"
+	 * @return a DateTime object for the EiEvent object
+	 */
+    public DateTime createDateTime(String date, String time){
 		int startYear = Integer.parseInt(date.substring(6, 10));
 		int startMonth = Integer.parseInt(date.substring(0, 2));
 		int startDay = Integer.parseInt(date.substring(3, 5));
@@ -192,19 +201,15 @@ public class Event{
         calendar.setHour(startHour);
         calendar.setMinute(startMinute);
         calendar.setSecond(0);
-        
-        /*
-        calendar.setYear(startYear);
-        calendar.setMonth(startMonth);
-        calendar.setDay(startDay);
-        calendar.setHour(startHour);
-        calendar.setMinute(startMinute);
-        */
 		dateTime.setValue(calendar);
 		return dateTime;
 	}
 	
-	// returns a difference in minutes between the start and end of the requested times
+    /**
+     * Returns the duration of an event in minutes
+     * 
+     * @return duration of the event in minutes
+     */
 	private long getMinutesDuration(){		
 		DateTime startDateTime = createDateTime(startDate, startTime);
 		DateTime endDateTime = createDateTime(endDate, endTime);
@@ -215,16 +220,32 @@ public class Event{
         return minutes;
 	}
 	
-	//sets the startDate and startTime based on the string from ical
+	/**
+	 * Sets the start date and start time based on the DateTime String
+	 * 
+	 * @param startString - DateTime String parsed to make separate date and time Strings
+	 */
 	private void setStartDateTime(String startString){
 		this.startDate = makeStartDate(startString);
 		this.startTime = makeStartTime(startString);
 	}
 	
+	/**
+	 * Returns a formatted start date String from the form String
+	 * 
+	 * @param startString - Start String from the form
+	 * @return a formatted start date String
+	 */
 	public String makeStartDate(String startString){
 		return this.startDate = startString.substring(5, 7) + "-" + startString.substring(8, 10) + "-" + startString.substring(0, 4);
 	}
 	
+	/**
+	 * Converts the form String to a formatted start time String
+	 * 
+	 * @param startString - Start String from the form
+	 * @return a formatted start time String
+	 */
 	public String makeStartTime(String startString){
 		int startHours = Integer.parseInt(startString.substring(11, 13));
 		String startSuffix = " AM";		
@@ -245,11 +266,12 @@ public class Event{
 		return (startHoursString + ":" + startString.substring(14, 16) + startSuffix);
 	}
 	
-	//sets the end date based on the startDate and startTime
-	//should also make this extensible somehow
+	/**
+	 * Sets the end date based on the start date and start time
+	 * based upon the Duration
+	 * 
+	 */
 	private void setEndDateTime(){
-
-
         DatatypeFactory xmlDataTypeFac = null;
         try {
             xmlDataTypeFac = DatatypeFactory.newInstance();
@@ -282,6 +304,12 @@ public class Event{
 	
 	// takes a long of minutes and creates it into an XCal string
 	// only positive and does not account for seconds
+	/**
+	 * Takes a long in minutes and converts it to an XMLGregorianCalendar String
+	 * 
+	 * @param minutes - The number of minutes required by the String
+	 * @return the String properly formatted for XMLGregorianCalendar with 0 values omitted
+	 */
 	private String createXCalString(long minutes){
 		int weeks = (int) (minutes / 10080);
 		minutes -= weeks * 10080;
@@ -308,6 +336,12 @@ public class Event{
 	
 	//uses the regex to take the ISO8601 string and return
 	//the number of minutes contained in it
+	/**
+	 * Converts an XMLGregorianCalendar string to an integer in minutes
+	 * 
+	 * @param xCal - the XMLGregorianCalendar string to be parsed
+	 * @return the total number of minutes contained in the XMLGregorianCalendar string
+	 */
 	public static int minutesFromXCal(String xCal){
 		Pattern p = Pattern.compile("P(?:(\\d+)W)?(?:(\\d+)D)?T?(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
 		Matcher m = p.matcher(xCal);
@@ -326,30 +360,48 @@ public class Event{
 			returnMinutes += Integer.parseInt(m.group(4));
 		}
 		return returnMinutes;	
-	}
+	}	
 	
-	
-	
+	/**
+	 * Displays a duration in minutes for the Events display page
+	 * 
+	 * @param s - the Duration to be displayed
+	 * @return a duration in minutes cast as a String
+	 */
 	public String displayReadableDuration(String s){
 		return "" + minutesFromXCal(s);
 	}
 	
+	/**
+	 * Displays a human readable start date and time for the display page
+	 * 
+	 * @param s - the DateTime string
+	 * @return a human readable start date and time
+	 */
 	public String displayReadableStart(String s){
 		String time = makeStartTime(s);
 		time = time.replace("00:", "12:");
 		return makeStartDate(s) + " @ " + time;
 	}
 	
+	/**
+	 * Custom validation message called by the Play2 on form submission
+	 * 
+	 * @return a String containing any errors within the form, null if no errors
+	 */
 	public String validate(){
-		String errorMessage = validation(this.startDate, this.endDate, this.startTime, this.endTime);
-		if(errorMessage != null){
-			return errorMessage;
-		}
-		else{
-			return null;
-		}
+		return validation(this.startDate, this.endDate, this.startTime, this.endTime);
 	}
 	
+	/**
+	 * Validates the Date and Time fields and returns a String if all is no as expected
+	 * 
+	 * @param startDate - the start date field
+	 * @param endDate - the end date field
+	 * @param startTime - the start time field
+	 * @param endTime - the end time form field
+	 * @return a String containing the error, null if otherwise
+	 */
 	public String validation(String startDate, String endDate, String startTime, String endTime){
 		String dateRegEx = "^([0|1]\\d)-([0-3]\\d)-(\\d+)$";
 		Pattern datePattern = Pattern.compile(dateRegEx);
@@ -382,17 +434,36 @@ public class Event{
 		return null;
 	}
 	
-	public boolean startIsBeforeEnd(String startDate, String startTime, String endDate, String endTime){
-	    
+	/**
+	 * Returns a boolean if the start DateTime is before the end DateTime
+	 * 
+     * @param startDate - the start date field
+     * @param endDate - the end date field
+     * @param startTime - the start time field
+     * @param endTime - the end time form field
+	 * @return true if the starting DateTime occurs before or at the same time as the ending DateTime
+	 */
+	public boolean startIsBeforeEnd(String startDate, String startTime, String endDate, String endTime){	    
 		DateTime dtStart = createDateTime(startDate, startTime);
 		DateTime dtEnd = createDateTime(endDate, endTime);
 		return dtStart.getValue().toGregorianCalendar().getTimeInMillis() <= dtEnd.getValue().toGregorianCalendar().getTimeInMillis();	
 	}
 	
+	/**
+	 * Checks to see if the event being created conflicts with the active period of another event
+	 * 
+	 * @return true if the event does not conflict, false otherwise
+	 */
 	@SuppressWarnings("unchecked")
     @Transactional
     public boolean isConflicting(){
         Map<String, EiEvent> eventMap = new HashMap<String, EiEvent>();
+        /*
+         * "Quasi" is more appropriate than "pseudo" as the former represents an entity somewhat 
+         * by possessing certain qualities, in this instance, the qualities of an EiEvent but not ALL of them exist.
+         * The latter is unacceptable as the formal definition is of a falsehood, but the object in question is not a 
+         * false/fake EiEvent, just one that is incomplete. The more you know.
+        */
         EiEvent quasiEvent = getQuasiEvent();
         eventMap.put(quasiEvent.getEventDescriptor().getEiMarketContext().getMarketContext().getValue(), quasiEvent);
         List<EiEvent> eiEvents = entityManager.createQuery("FROM EiEvent").getResultList();
@@ -421,6 +492,12 @@ public class Event{
         return false;
     }
 	
+	/**
+	 * Creates a Duration from an EiEvent
+	 * 
+	 * @param event - the EiEvent to pull the Duration from
+	 * @return a Duration pulled from the DurationValue in EiEvent
+	 */
     public static Duration getDuration(EiEvent event){
         DatatypeFactory df = null;
         try {
@@ -431,6 +508,11 @@ public class Event{
         return df.newDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
     }
     
+    /**
+     * Creates an EiEvent with only mandatory fields filled in
+     * 
+     * @return an incomplete EiEvent which is still fully acceptable for conflict comparison
+     */
     public EiEvent getQuasiEvent(){
         return new EiEvent()
             .withEventDescriptor(new EventDescriptor()
@@ -447,6 +529,11 @@ public class Event{
                                                     .withValue(createXCalString(getMinutesDuration()))))));
     }
 
+    
+    /*
+     * Getters && setters
+     */
+    
     public String getMarketContext() {
         return marketContext;
     }

@@ -3,9 +3,15 @@ package models;
 import javax.persistence.*;
 import play.data.validation.Constraints.Required;
 
+/**
+ * A class to represent the Program creation form
+ * for Play's automatic binding of form fields to Objects
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 @Entity(name="Program")
 @Table(name="PROGRAMS")
-//@Inheritance(strategy = InheritanceType.JOINED)
 public class Program{
 	
 	@Required(message = "Must enter a valid Program Name")
@@ -21,7 +27,6 @@ public class Program{
 	
 	public Program(int programId){
 		this.setId(programId);
-		// also need to add setter for the other two fields from find statement
 	}
 
 	@Column(name="PROJECTURI")

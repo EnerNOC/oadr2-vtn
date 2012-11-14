@@ -7,9 +7,15 @@ import javax.persistence.*;
 
 import play.data.validation.Constraints.Required;
 
+/**
+ * A class to represent the VEN creation form
+ * for Play's automatic binding of form fields to Objects
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 @Entity(name="VEN")
 @Table(name="VEN")
-//@Inheritance(strategy = InheritanceType.JOINED)
 public class VEN{
 			
 	@Required(message = "Must enter a valid VEN ID")

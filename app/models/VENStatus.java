@@ -3,7 +3,6 @@ package models;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,8 +11,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.hibernate.mapping.Map;
-
+/**
+ * A class to represent the VENStatus creation form
+ * for Play's automatic binding of form fields to Objects
+ * This object is used to track communications with VENs
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 @Entity(name = "VENStatus")
 @Table(name = "VENSTATUS")
 public class VENStatus {
@@ -98,6 +103,11 @@ public class VENStatus {
 		this.time = time;
 	}
 	
+	/**
+	 * Formats the date as readable format
+	 * 
+	 * @return a String of a readable DateTime
+	 */
 	public String displayTime(){
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy @ h:mm aa");
 		return(dateFormat.format(time));	}
