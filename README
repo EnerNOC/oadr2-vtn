@@ -1,4 +1,15 @@
-This is your new Play 2.0 application
-=====================================
+OADR2 VTN Reference Implementation
+Author - Jeff LaJoie
 
-This file will be packaged with your application, when using `play dist`.
+==================================
+
+OADR2 Compliant web app written in the Java version of the Play2 Framework
+
+Featuring:
+ - Twitter Bootstrap CSS
+ - AJAX page refreshing
+ - Javascript Date and Time GUIs on forms
+ - CRUD functionality for all Event, Program and VEN tables
+   - Form validation on Create form calls
+ - Active wait and response for HTTP 'pull'
+ - XMPP 'push' functionality to distribute OadrEvents to specified JIDs
