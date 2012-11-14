@@ -10,6 +10,6 @@ Featuring:
  - AJAX page refreshing
  - Javascript Date and Time GUIs on forms
  - CRUD functionality for all Event, Program and VEN tables
-   - Form validation on Create form calls
+ - Form validation on Create form calls
  - Active wait and response for HTTP 'pull'
  - XMPP 'push' functionality to distribute OadrEvents to specified JIDs
