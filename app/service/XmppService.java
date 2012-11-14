@@ -25,6 +25,13 @@ import xmpp.OADR2PacketExtension;
 
 import com.google.inject.Inject;
 
+/**
+ * XMPPService is used to establish and hold the XMPPConnection
+ * to be used for sending and creating events
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class XmppService {
 
     private static volatile XmppService instance = null;
@@ -35,7 +42,6 @@ public class XmppService {
     
     private static XMPPConnection vtnConnection;
     
-    //@Inject static PushService pushService;
     @Inject static PushService pushService;// = new PushService();
     @Inject static EiEventService eventService;// = new EiEventService();
     
@@ -48,7 +54,15 @@ public class XmppService {
     
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
     static EntityManager entityManager = entityManagerFactory.createEntityManager();
-        
+    
+    /**
+     * Constructor to establish the XMPP connection
+     * 
+     * @throws XMPPException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws JAXBException
+     */
     public XmppService() throws XMPPException, InstantiationException, IllegalAccessException, JAXBException{
         //Add for debugging
         //Connection.DEBUG_ENABLED = true;
@@ -60,6 +74,11 @@ public class XmppService {
         marshaller = jaxb.createMarshaller();
     }
     
+    /**
+     * Singleton getter for when Guice injection is not possible
+     * 
+     * @return the singleton XmppService
+     */
     public static XmppService getInstance(){
         if(instance == null){
             synchronized(XmppService.class){
@@ -81,11 +100,12 @@ public class XmppService {
         return instance;
     }
     
-    public XmppService(String username, String password){
-        this.vtnUsername = username;
-        this.vtnPassword = password;
-    }
    
+    /**
+     * Adds a packet listener to the connection that handles all incoming packets
+     * 
+     * @return a PacketListener to be added to a connection
+     */
     @Transactional
     public PacketListener oadrPacketListener(){
         return new PacketListener(){
@@ -101,6 +121,11 @@ public class XmppService {
         };
     }
     
+    /**
+     * A packet filter to only accept packets with the OADR2_XMLNS
+     * 
+     * @return a PacketFilter to be added to a PacketListener
+     */
     public PacketFilter oadrPacketFilter(){
         return new PacketFilter(){
             @Override
@@ -110,6 +135,17 @@ public class XmppService {
         };
     }
     
+    /**
+     * Establish a connection for the XMPP server
+     * 
+     * @param username - Username to connect with
+     * @param password - Password to connect with according to the username specified
+     * @param resource - Resource to connect the XMPP to
+     * @return
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws XMPPException
+     */
     public XMPPConnection connect(String username, String password, String resource) throws InstantiationException, IllegalAccessException, XMPPException{
        XMPPConnection connection = new XMPPConnection(connConfig);
        if(!connection.isConnected()){
@@ -122,6 +158,12 @@ public class XmppService {
        return connection;
     }        
     
+    /**
+     * Sends an object to a JID
+     * 
+     * @param o - the Object to be sent
+     * @param jid - the Jid to receive the object
+     */
     public void sendObjectToJID(Object o, String jid){
         IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
         iq.setTo(jid);
@@ -129,6 +171,13 @@ public class XmppService {
         vtnConnection.sendPacket(iq);
     }
     
+    /**
+     * Send an object to a jid with the specified packetId
+     * 
+     * @param o - the Object to be sent
+     * @param jid - the Jid to receive the object
+     * @param packetId - the packetId the packet must contain
+     */
     public void sendObjectToJID(Object o, String jid, String packetId){
         IQ iq = new OADR2IQ(new OADR2PacketExtension(o, marshaller));
         iq.setTo(jid);

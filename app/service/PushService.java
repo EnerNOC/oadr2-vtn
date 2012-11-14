@@ -20,6 +20,12 @@ import play.db.jpa.Transactional;
 
 import tasks.EventPushTask;
 
+/**
+ * Establish a thread pool for asynchronous sending of push events
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class PushService{
     
     final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
@@ -30,6 +36,14 @@ public class PushService{
         threadPool.prestartAllCoreThreads();
     }
     
+    /**
+     * Takes the event and VENs to send the event to and adds them to the already running 
+     * thread pool of the PushService class
+     * 
+     * @param e - Event to be sent
+     * @param vens - VENs to receive the event
+     * @throws JAXBException - thrown if an error occurs marhsalling/unmarhsalling an OADR object
+     */
     @Transactional
     public void pushNewEvent(EiEvent e, List<VEN> vens) throws JAXBException{       
         for(VEN v : vens){

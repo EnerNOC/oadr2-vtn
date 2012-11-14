@@ -1,13 +1,17 @@
 package tasks;
 
-import java.util.Random;
-
 import org.enernoc.open.oadr2.model.OadrResponse;
 
 import protocol.IProtocol;
 import protocol.ProtocolRegistry;
 import service.XmppService;
 
+/**
+ * Runnable task to be submitted to the PushService
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class EventPushTask implements Runnable{
     
 
@@ -20,26 +24,22 @@ public class EventPushTask implements Runnable{
     
     public EventPushTask(String uri, Object oadrObject){
         this.oadrObject = oadrObject;
-        //switch to uri
         this.uri = uri;
     }
 
+    /**
+     * Called when the Runnable is executed by the thread pool,
+     * sends the object to the jid w/ or w/o a packet id
+     */
     @Override
     public void run() {
-        //Logger.info("Running event for uri: " + uri + " - " + System.currentTimeMillis());
-        Random r = new Random();
-        try {
-            Thread.sleep(r.nextInt(3000) + 1000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        //if else for protocol type
         IProtocol protocol = protocolRegistry.getProtocol(uri);
         if(pid != null){
             protocol.send(uri, (OadrResponse)oadrObject, pid);
         }
-        protocolRegistry.getProtocol(uri).send(uri, oadrObject);
+        else{
+            protocol.send(uri, oadrObject);
+        }
     }
 
 }

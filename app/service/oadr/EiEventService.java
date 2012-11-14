@@ -36,7 +36,12 @@ import org.enernoc.open.oadr2.model.ResponseRequiredType;
 import play.Logger;
 import play.db.jpa.Transactional;
 import service.XmppService;
-
+/**
+ * EiEventService handles all persistence and object creation of payloads
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class EiEventService{
 
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
@@ -48,6 +53,12 @@ public class EiEventService{
         
     }
     
+    /**
+     * Static singleton creation for non-controller packages
+     * as Play does not permit injection into multiple packages
+     * 
+     * @return the sole synchronized EiEventService object
+     */
     public static EiEventService getInstance(){
         if(instance == null){
             synchronized(XmppService.class){
@@ -59,10 +70,14 @@ public class EiEventService{
         return instance;
     }
     
-    //Change to return Object instead of result
+    /**
+     * Determines which method to call based on the Object it is passed
+     * 
+     * @param o - Object to be used to create the responding payload Object 
+     * @return an Object to be marshalled to XML and sent over HTTP or XMPP
+     */
     public Object handleOadrPayload(Object o){
         if(o instanceof OadrRequestEvent){
-            //cast to a request event before passing to send()
             return handleOadrRequest((OadrRequestEvent)o);
         }
         else if(o instanceof OadrCreatedEvent){
@@ -73,12 +88,16 @@ public class EiEventService{
             return null;
         }
         else{
-            //TODO find out what to return if an http payload is of an incorrect type, probably http status code
-            //move to controller for http specific, have it throw Exception
             throw new RuntimeException("Object was not of correct class");
         }
     }    
     
+    /**
+     * Take a OadrCreatedEvent and persists the information, as well as creating an OadrResponse
+     * 
+     * @param oadrCreatedEvent
+     * @return an OadrResponse containing information to respond to an OadrCreatedEvent
+     */
     @Transactional
     public static OadrResponse handleOadrCreated(OadrCreatedEvent oadrCreatedEvent){
         String responseCode = verifyOadrCreated(oadrCreatedEvent);
@@ -103,6 +122,12 @@ public class EiEventService{
         }
     }
     
+    /**
+     * Takes an OadrCreatedEvent and verifies that the Response exists and there are no errors in the payload
+     * 
+     * @param oadrCreatedEvent - the OadrCreatedEvent to be checked for errors
+     * @return a response code as a string
+     */
     @SuppressWarnings("unchecked")
     @Transactional
     public static String verifyOadrCreated(OadrCreatedEvent oadrCreatedEvent){
@@ -127,6 +152,13 @@ public class EiEventService{
         return "400";
     }
     
+    /**
+     * Takes an OadrRequestEvent and persists the data to the tables
+     * While formatting an ordering the Pending/Active events for the OadrDistributeEvent
+     * 
+     * @param oadrRequestEvent - Request incoming from the VEN
+     * @return an OadrDistributeEvent containing all payload information
+     */
     @SuppressWarnings("unchecked")
     @Transactional
     public static OadrDistributeEvent handleOadrRequest(OadrRequestEvent oadrRequestEvent){
@@ -175,7 +207,6 @@ public class EiEventService{
             eiResponse
                 .withRequestID("TH_REQUEST_ID");
         }
-        //TODO see if setting this to 200 breaks the 0710
         eiResponse.setResponseCode(new ResponseCode("409"));    
         
         createNewEm();
@@ -207,7 +238,7 @@ public class EiEventService{
                 );
             }
             Collections.sort(oadrEvents, new OadrEventComparator());
-            //oadrEvents = listReduce(oadrEvents);
+            //oadrEvents = listReduce(oadrEvents); //NOT NEEDED ANYMORE, DUPLICATE AND OVERLAPPING EVENTS SHOULD BE CONTAINED
             if(oadrRequestEvent.getEiRequestEvent().getReplyLimit() != null){
                 oadrEvents = removeEventsOverLimit(oadrEvents, oadrRequestEvent.getEiRequestEvent().getReplyLimit().intValue());
             }
@@ -225,10 +256,12 @@ public class EiEventService{
     }
     
     /**
+     * Removes duplicate and overlapping events  
      * 
      * @param oadrEvents - List of OadrEvent containing all events within Market Contexts
      * @return - The reduced ArrayList containing no overlapping events within the same MarketContext
      */
+    @Deprecated //no longer used due to how the schema validates the payload
     public static ArrayList<OadrEvent> listReduce(List<OadrEvent> oadrEvents){
         Map<String, OadrEvent> eventMap = new HashMap<String, OadrEvent>();
         for(OadrEvent event : oadrEvents){
@@ -252,7 +285,12 @@ public class EiEventService{
         }
         return new ArrayList<OadrEvent>(eventMap.values());
     }
-        
+    
+    /**
+     * Persists the information from an OadrRequestEvent into the database
+     * 
+     * @param requestEvent - The event to be used to form the persistence object
+     */
     @SuppressWarnings("unchecked")
     @Transactional
     public static void persistFromRequestEvent(OadrRequestEvent requestEvent){
@@ -294,6 +332,11 @@ public class EiEventService{
         }
     }
 
+    /**
+     * Persists the information from an OadrCreatedEvent into the database
+     * 
+     * @param requestEvent - The event to be used to form the persistence object
+     */
     @SuppressWarnings("unchecked")
     @Transactional
     public static void persistFromCreatedEvent(OadrCreatedEvent createdEvent){
@@ -316,6 +359,12 @@ public class EiEventService{
         }
     }
     
+
+    /**
+     * Persists the information from an OadrResponse into the database
+     * 
+     * @param requestEvent - The event to be used to form the persistence object
+     */
     public static void handleFromOadrResponse(OadrResponse response){
         VENStatus status = null;
         createNewEm();
@@ -334,6 +383,10 @@ public class EiEventService{
         }
     }
         
+    /**
+     * Creates a new entityManager and if it is not active begins the transaction.
+     * Used because play JPA() helper does not exist in 
+     */
     public static void createNewEm(){
         entityManager = entityManagerFactory.createEntityManager();
         if(!entityManager.getTransaction().isActive()){
@@ -341,6 +394,13 @@ public class EiEventService{
         }
     }
     
+    /**
+     * Gets the DurationValue from an EiEvent as a java.util.Duration
+     * 
+     * @param event - EiEvent to have the DurationValue pulled from
+     * @return a Duration based on the EiEvent DurationValue
+     */
+    @Deprecated //no longer used, only called by other deprecated listReduce method
     public static Duration getDuration(EiEvent event){
         DatatypeFactory df = null;
         try {
