@@ -12,22 +12,19 @@ import org.enernoc.open.oadr2.model.OadrResponse;
 
 import service.XmppService;
 
+/**
+ * XMPPProtocol that extends the BaseProtocol for sending of
+ * XMPP messages to the specified uri
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class XMPPProtocol extends BaseProtocol{    
         
-    static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
-    static EntityManager entityManager = entityManagerFactory.createEntityManager();
-    
     static XmppService xmppService = XmppService.getInstance();  
     
     public XMPPProtocol(){
         this.setProtocolType(ProtocolType.XMPP);
-    }
-    
-    public static void createNewEm(){
-        entityManager = entityManagerFactory.createEntityManager();
-        if(!entityManager.getTransaction().isActive()){
-            entityManager.getTransaction().begin();
-        }
     }
 
     @Override

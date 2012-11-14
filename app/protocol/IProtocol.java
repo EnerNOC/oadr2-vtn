@@ -10,6 +10,13 @@ import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.OadrRequestEvent;
 import org.enernoc.open.oadr2.model.OadrResponse;
 
+/**
+ * IProtocol is the interface for the BaseProtocol class
+ * forming the contract of requiring the Protocols to have certain send methods
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 @Embeddable
 public interface IProtocol {
     

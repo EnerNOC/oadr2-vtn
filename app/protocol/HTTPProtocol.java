@@ -13,8 +13,12 @@ import org.enernoc.open.oadr2.model.OadrResponse;
 import play.Logger;
 import service.XmppService;
 
-//TODO Need to find out if whether or not "send" for HTTP is appropriate, since a POST using CURL won't return a response
-//doing it this way, perhaps look at the response() 
+/**
+ * HTTPProtocol on how to handle the Push portion of HTTP
+ * 
+ * @author Jeff LaJoie
+ *
+ */
 public class HTTPProtocol extends BaseProtocol{
     
     static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("Events");
@@ -27,7 +31,6 @@ public class HTTPProtocol extends BaseProtocol{
 
     @Override
     public void send(String uri, OadrResponse oadrResponse, String pid) {
-        xmppService.sendObjectToJID(oadrResponse, uri, pid);
     }
 
     @Override
@@ -52,7 +55,6 @@ public class HTTPProtocol extends BaseProtocol{
     
     @Override
     public void send(String uri, Object oadrObject){
-        Logger.info("Sending an object via HTTP to: " + uri);
     }
 
 }
