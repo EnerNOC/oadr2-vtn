@@ -16,7 +16,7 @@
 		}
 	</select>
 	<h3>VEN Status</h3>	
-	<div id=xmlOutput></div>	
+	<div id=venStatusTable></div>	
 
 	<script>	
 		$(document).ready(function(){	
@@ -24,9 +24,9 @@
 				$.post('@routes.VENStatuses.renderAjaxTable(program)',
 						"",
 						function(data){
-							$('#xmlOutput').empty();
+							$('#venStatusTable').empty();
 							$('<div class="refreshing"><img src=@routes.Assets.at("/images/loader.gif")></div>').appendTo('#xmlOutput');
-							$('#xmlOutput').append(data);
+							$('#venStatusTable').append(data);
 							$(".refreshing").remove();
 				});
 			};
@@ -39,7 +39,7 @@
 
 			loadOadrEvents();
 						
-			setInterval(loadOadrEvents, 30000);
+			setInterval(loadOadrEvents, 10000);
 		});	
 	</script>
 }

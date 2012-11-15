@@ -10,6 +10,8 @@ GET	/						controllers.Programs.index()
 
 # Event List
 GET /events					controllers.Events.events()
+# Display Events
+POST /displayEventsTable		controllers.Events.renderAJAXTable()
 
 # New Event
 GET	/events/new					controllers.Events.blankEvent()

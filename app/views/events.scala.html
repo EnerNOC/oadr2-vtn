@@ -1,5 +1,3 @@
-@(eventsList: List[EiEvent], eventForm: Event)
-
 @import helper._
 
 @import helper.twitterBootstrap._
@@ -11,45 +9,26 @@
 		            <strong>Success: </strong> @flash.get("success")
 		        </div>
 		} 
-		   
-        <table class="zebra-striped">
-            <thead>
-                <tr>
-                	<th>Event ID</th>
-                	<th>Priority</th>
-                	<th>Status</th>
-                	<th>Start Time</th>
-                	<th>Duration</th>
-                	<th>Market Context</th>
-                </tr>
-            </thead>
-            <tfoot>
-            </tfoot>
-            <tbody>            	
-				@for(event <- eventsList){
-					<tr>
-						<td><a href="@routes.VENStatuses.venStatuses(event.getEventDescriptor().getEventID())">@event.getEventDescriptor().getEventID()</a></td>
-						<td>@event.getEventDescriptor().getPriority()</td>
-						<td>@event.getEventDescriptor().getEventStatus()</td>
-						<td>@eventForm.displayReadableStart(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString())</td>
-						<td>@eventForm.displayReadableDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue())</td>
-						<td>@event.getEventDescriptor().getEiMarketContext().getMarketContext().getValue()</td>							
-						<td>
-							@form(routes.Events.editEvent(event.getHjid())){
-								<input type="submit" value="Edit" class="btn primary">
-							}
-						</td>
-						<td>
-							@form(routes.Events.deleteEvent(event.getHjid())){
-								<input type="submit" value="Delete" class="btn danger" onClick="return confirmSubmit()">
-							}
-						</td>	
-						<td>
-							@form(routes.Events.cancelEvent(event.getHjid())){
-								<input type="submit" value="Cancel" class="btn">
-							}			
-					</tr>
-				}            	
-            </tbody>
-        </table>        
+		
+		<div id=eventsTable></div>
+		
+        <script>
+	  		$(document).ready(function(){	
+				var loadOadrEvents = function(){
+					$.post('@routes.Events.renderAJAXTable()',
+							"",
+							function(data){
+								$('#eventsTable').empty();
+								$('<div class="refreshing"><img src=@routes.Assets.at("/images/loader.gif")></div>').appendTo('#eventsTable');
+								$('#eventsTable').append(data);
+								$(".refreshing").remove();
+					});
+				};   
+	  		
+		  		loadOadrEvents();
+	
+				setInterval(loadOadrEvents, 15000); 
+	  		});
+			
+		</script>
 }

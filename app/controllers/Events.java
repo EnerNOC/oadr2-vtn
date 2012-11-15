@@ -51,6 +51,7 @@ import org.enernoc.open.oadr2.model.SignalPayload;
 import org.enernoc.open.oadr2.model.SignalTypeEnumeratedType;
 import org.enernoc.open.oadr2.model.Uid;
 
+import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -100,35 +101,41 @@ public class Events extends Controller {
        */
       @SuppressWarnings("unchecked")
       @Transactional
-      public static Result events(){
+      public static Result events(){ 	  
+    	  return ok(views.html.events.render());
+      }
+
+      @SuppressWarnings("unchecked")
+      @Transactional
+      public static Result renderAJAXTable(){
           /**
            * Comparator to return the ordering of the two EiEvents based on start time
            * 
            * @author Jeff LaJoie       
            */
-    	  class EiEventComparator implements Comparator<EiEvent>{
-    		  public int compare(EiEvent eventOne, EiEvent eventTwo){
-    			  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
-    			          eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
-    		  }
-    	  } 
+          class EiEventComparator implements Comparator<EiEvent>{
+              public int compare(EiEvent eventOne, EiEvent eventTwo){
+                  return eventOne.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().compare(
+                          eventTwo.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue());
+              }
+          } 
           Date currentDate = new Date();          
           GregorianCalendar calendar = new GregorianCalendar();
           calendar.setTime(currentDate);
           XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
           xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
-    	  List<EiEvent> eiEvents = JPA.em().createQuery("FROM EiEvent").getResultList();
-    	  Collections.sort(eiEvents, new EiEventComparator());
-    	  for(EiEvent e : eiEvents){
-    	      e.getEventDescriptor()
-    	          .withCreatedDateTime(new DateTime().withValue(xCalendar));
-    	      if(!e.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.CANCELLED))
-    	          e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
-    	          for(EiEventSignal eventSignal : e.getEiEventSignals().getEiEventSignals()){
-    	              eventSignal.setCurrentValue(new CurrentValue().withPayloadFloat(new PayloadFloat().withValue(updateSignalPayload(e))));
-    	          }
-    	  }    	  
-    	  return ok(views.html.events.render(eiEvents, new Event()));
+          List<EiEvent> events = JPA.em().createQuery("FROM EiEvent").getResultList();
+          Collections.sort(events, new EiEventComparator());
+          for(EiEvent e : events){
+              e.getEventDescriptor()
+                  .withCreatedDateTime(new DateTime().withValue(xCalendar));
+              if(!e.getEventDescriptor().getEventStatus().equals(EventStatusEnumeratedType.CANCELLED))
+                  e.getEventDescriptor().setEventStatus(updateStatus(e, e.getEiEventSignals().getEiEventSignals().size()));
+                  for(EiEventSignal eventSignal : e.getEiEventSignals().getEiEventSignals()){
+                      eventSignal.setCurrentValue(new CurrentValue().withPayloadFloat(new PayloadFloat().withValue(updateSignalPayload(e))));
+                  }
+          }  
+          return ok(views.html.eventsTable.render(events, new Event()));
       }
       
       /**
@@ -207,7 +214,7 @@ public class Events extends Controller {
        */
       @Transactional
       public static Result updateEvent(Long id){
-    	  Form<Event> eventForm = form(Event.class).bindFromRequest();
+          Form<Event> eventForm = form(Event.class).bindFromRequest();
           if(eventForm.hasErrors()) {
               return badRequest(views.html.editEvent.render(id, eventForm, new Event(), makeProgramMap()));
           }
@@ -218,20 +225,23 @@ public class Events extends Controller {
           calendar.setTime(currentDate);
           XMLGregorianCalendar xCalendar = datatypeFactory.newXMLGregorianCalendar(calendar);
           xCalendar.setTimezone(DatatypeConstants.FIELD_UNDEFINED);
+          
           JAXBElement<SignalPayload> signalPayload = objectFactory.createSignalPayload(new SignalPayload(new PayloadFloat(1)));
+          
           String contextName = JPA.em().find(Program.class, Long.parseLong(newEventForm.getMarketContext())).getProgramName();
           Intervals intervals = new Intervals();
           ArrayList<Interval> intervalList = new ArrayList<Interval>();
+          
           for(int i=0; i < newEventForm.getIntervals(); i++){
               intervalList.add(new Interval()
                   .withDuration(new DurationPropType()
                       .withDuration(new DurationValue()
-                          .withValue(formatDuration(getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue())))))
+                          .withValue(formatDuration(getDuration(event)))))
                   .withUid(new Uid()
                       .withText("" + i))
                   .withStreamPayloadBase(signalPayload));
           }
-          intervals.setIntervals(intervalList);
+          intervals.setIntervals(intervalList);                    
           event.setEiActivePeriod(new EiActivePeriod()
                   .withProperties(new Properties()
                       .withDtstart(new Dtstart()
@@ -239,7 +249,7 @@ public class Events extends Controller {
                               .withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
                       .withDuration(new DurationPropType()
                           .withDuration(new DurationValue()
-                              .withValue(formatDuration(getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), (int)newEventForm.getIntervals())))))
+                              .withValue(formatDuration(getDuration(event, (int)newEventForm.getIntervals())))))
                       .withTolerance(new Tolerance()
                           .withTolerate(new Tolerate()
                               .withStartafter(new DurationValue()
@@ -269,15 +279,16 @@ public class Events extends Controller {
           .withEiEventSignals(new EiEventSignal()
                   .withCurrentValue(new CurrentValue()
                           .withPayloadFloat(new PayloadFloat()
-                                  .withValue(updateSignalPayload(event))))
+                                  .withValue(updateSignalPayload(event)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
                   .withIntervals(new Intervals()
                       .withIntervals(intervalList))
                   .withSignalID("TH_SIGNAL_ID")
                   .withSignalName("simple")
                   .withSignalType(SignalTypeEnumeratedType.LEVEL)));
+          
           JPA.em().merge(event);
           flash("success", "Event has been updated");
-    	  return redirect(routes.Events.events());
+          return redirect(routes.Events.events());
       }
 
       /**
@@ -337,7 +348,7 @@ public class Events extends Controller {
           DateTime rampUpTime = new DateTime().withValue(event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize());
           
           rampUpTime.getValue().add(getDuration(event.getEiActivePeriod().getProperties().getXEiRampUp().getDuration().getValue()));
-          Duration d = getDuration(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), intervals);
+          Duration d = getDuration(event, intervals);
           endTime.getValue().add(d);
                   
           if(currentTime.getValue().compare(startTime.getValue()) == -1){
@@ -358,6 +369,7 @@ public class Events extends Controller {
               return EventStatusEnumeratedType.NONE;
           }
       }
+
       
       /**
        * Updates the SignalPayloadFloat based on the EventStatus contained in the EiEvent
@@ -438,15 +450,31 @@ public class Events extends Controller {
        * @param intervals - number of intervals to be serviced
        * @return Duration from the event multiplied by the number of intervals
        */
-      public static Duration getDuration(String event, int intervals){
+      public static Duration getDuration(EiEvent event, int intervals){
           DatatypeFactory df = null;
           try {
               df = DatatypeFactory.newInstance();
           } catch (DatatypeConfigurationException e) {
             e.printStackTrace();
           }
-          Duration duration = df.newDuration(event);
+          Duration duration = df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
           return duration.multiply(intervals);
+      }
+      
+      /**
+       * Converts an event to a duration based on the event and number of intervals
+       * 
+       * @param event - Duration that needs to be converted from String to Duration
+       * @return Duration from the event
+       */
+      public static Duration getDuration(EiEvent event){
+          DatatypeFactory df = null;
+          try {
+              df = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e) {
+            e.printStackTrace();
+          }
+          return df.newDuration(Event.minutesFromXCal(event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue()) * 60000);
       }
       
       /**
@@ -499,12 +527,13 @@ public class Events extends Controller {
               intervalList.add(new Interval()
                   .withDuration(new DurationPropType()
                       .withDuration(new DurationValue()
-                          .withValue(formatDuration(getDuration(newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue())))))
+                          .withValue(formatDuration(getDuration(newEvent)))))
                   .withUid(new Uid()
                       .withText("" + i))
                   .withStreamPayloadBase(signalPayload));
           }
-          intervals.setIntervals(intervalList);                        
+          intervals.setIntervals(intervalList);    
+          Logger.info("EventDuration: " + newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
           newEvent
               .withEiActivePeriod(new EiActivePeriod()
                   .withProperties(new Properties()
@@ -513,7 +542,7 @@ public class Events extends Controller {
                               .withValue(newEvent.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().normalize())))
                       .withDuration(new DurationPropType()
                           .withDuration(new DurationValue()
-                              .withValue(formatDuration(getDuration(newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue(), (int)newEventForm.getIntervals())))))
+                              .withValue(formatDuration(getDuration(newEvent, (int)newEventForm.getIntervals())))))
                       .withTolerance(new Tolerance()
                           .withTolerate(new Tolerate()
                               .withStartafter(new DurationValue()
@@ -543,14 +572,12 @@ public class Events extends Controller {
                       .withEiEventSignals(new EiEventSignal()
                               .withCurrentValue(new CurrentValue()
                                       .withPayloadFloat(new PayloadFloat()
-                                              .withValue(updateSignalPayload(newEvent))))
+                                              .withValue(updateSignalPayload(newEvent)))) //TODO Not sure what this value is supposed to be, must be 0 when NEAR
                               .withIntervals(new Intervals()
                                   .withIntervals(intervalList))
                               .withSignalID("TH_SIGNAL_ID")
                               .withSignalName("simple")
                               .withSignalType(SignalTypeEnumeratedType.LEVEL)));
           return newEvent;
-      }     
-      
-      
+      }   
 }

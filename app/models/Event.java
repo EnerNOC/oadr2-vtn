@@ -100,6 +100,7 @@ public class Event{
 		this.status = event.getEventDescriptor().getEventStatus().value();
 		this.start = event.getEiActivePeriod().getProperties().getDtstart().getDateTime().getValue().toString();
 		this.duration = event.getEiActivePeriod().getProperties().getDuration().getDuration().getValue();
+		Logger.info(duration);
 		setStartDateTime(this.start);
 		setEndDateTime();
 	}
@@ -109,32 +110,32 @@ public class Event{
 	 * 
 	 * @return the unwrapped EiEvent with certain fields from the form filled
 	 */
-	public EiEvent toEiEvent(){
-		duration = createXCalString(getMinutesDuration());
-		this.start = createXMLTime(startDate, startTime);
-		DatatypeFactory xmlDataTypeFac = null;
-	    try {
-	    	xmlDataTypeFac = DatatypeFactory.newInstance();
-		  } catch (DatatypeConfigurationException e1) {
-			  e1.printStackTrace();
-		  }
-	    final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize();
-	    return eiEvent = new EiEvent()	                    
-	  					.withEventDescriptor(new EventDescriptor()
-  							.withEventID(eventID)
-  							.withPriority(priority)
-  							.withCreatedDateTime(new DateTime(startDttm))
-  							.withModificationNumber(0))
-	  					.withEiActivePeriod(new EiActivePeriod()
-  							.withProperties(new Properties()
-								.withDtstart(new Dtstart(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
-								.withDuration(new DurationPropType(new DurationValue(duration)))))
-	  					.withEiEventSignals(new EiEventSignals()
-	  						.withEiEventSignals(new EiEventSignal()
-	  							.withIntervals(new Intervals()
-  									.withIntervals(new Interval()
-  									.withDuration( new DurationPropType(new DurationValue(duration)))))));
-	}		
+    public EiEvent toEiEvent(){
+        duration = createXCalString(getMinutesDuration());
+        this.start = createXMLTime(startDate, startTime);
+        DatatypeFactory xmlDataTypeFac = null;
+        try {
+            xmlDataTypeFac = DatatypeFactory.newInstance();
+          } catch (DatatypeConfigurationException e1) {
+              e1.printStackTrace();
+          }
+        final XMLGregorianCalendar startDttm = xmlDataTypeFac.newXMLGregorianCalendar(start).normalize();
+        return eiEvent = new EiEvent()                      
+                        .withEventDescriptor(new EventDescriptor()
+                            .withEventID(eventID)
+                            .withPriority(priority)
+                            .withCreatedDateTime(new DateTime(startDttm))
+                            .withModificationNumber(0))
+                        .withEiActivePeriod(new EiActivePeriod()
+                            .withProperties(new Properties()
+                                .withDtstart(new Dtstart(new org.enernoc.open.oadr2.model.DateTime(startDttm)))
+                                .withDuration(new DurationPropType(new DurationValue(duration)))))
+                        .withEiEventSignals(new EiEventSignals()
+                            .withEiEventSignals(new EiEventSignal()
+                                .withIntervals(new Intervals()
+                                    .withIntervals(new Interval()
+                                    .withDuration( new DurationPropType(new DurationValue(duration)))))));
+    }	
 	
 	/**
 	 * Takes in a string of a date and a string of time in specific format
@@ -144,29 +145,29 @@ public class Event{
 	 * @param time - "h:mm" || "hh:mm"
 	 * @return a String accepted by the the XMLGregorianCalendar
 	 */
-	private String createXMLTime(String date, String time){
-		String year = date.substring(6, 10);
-		String month = date.substring(0, 2);
-		String day = date.substring(3, 5);
-		int hour = 0;
-		String tempString = time;
-		if(time.charAt(1) == ':'){
-			tempString = ("0" + time);
-		}
-		hour = Integer.parseInt(tempString.substring(0, 2));
-		if(hour == 12){
-			hour = 0;
-		}
-		if(time.charAt(6) == 'P'){
-			hour += 12;
-		}
-		String hourString = hour + "";
-		if(hour < 10){
-			hourString = "0" + hour;
-		}
-		String minute = tempString.substring(3, 5);
-		return year + "-" + month + "-" + day + "T" + hourString + ":" + minute + ":00";
-	}
+    private String createXMLTime(String date, String time){
+        String year = date.substring(6, 10);
+        String month = date.substring(0, 2);
+        String day = date.substring(3, 5);
+        int hour = 0;
+        String tempString = time;
+        if(time.charAt(1) == ':'){
+            tempString = ("0" + time);
+        }
+        hour = Integer.parseInt(tempString.substring(0, 2));
+        if(hour == 12){
+            hour = 0;
+        }
+        if(time.charAt(6) == 'P'){
+            hour += 12;
+        }
+        String hourString = hour + "";
+        if(hour < 10){
+            hourString = "0" + hour;
+        }
+        String minute = tempString.substring(3, 5);
+        return year + "-" + month + "-" + day + "T" + hourString + ":" + minute + ":00";
+    }
 	
 	/**
 	 * Returns a DateTime from two string inputs of date and time
@@ -176,18 +177,18 @@ public class Event{
 	 * @return a DateTime object for the EiEvent object
 	 */
     public DateTime createDateTime(String date, String time){
-		int startYear = Integer.parseInt(date.substring(6, 10));
-		int startMonth = Integer.parseInt(date.substring(0, 2));
-		int startDay = Integer.parseInt(date.substring(3, 5));
-		int startHour = Integer.parseInt(time.substring(0, 2));
-		if(startHour == 12){
-			startHour = 0;
-		}
-		if(time.charAt(6) == 'P'){
-			startHour += 12;
-		}
-		int startMinute = Integer.parseInt(time.substring(3, 5));
-		DateTime dateTime = new DateTime();		
+        int startYear = Integer.parseInt(date.substring(6, 10));
+        int startMonth = Integer.parseInt(date.substring(0, 2));
+        int startDay = Integer.parseInt(date.substring(3, 5));
+        int startHour = Integer.parseInt(time.substring(0, 2));
+        if(startHour == 12){
+            startHour = 0;
+        }
+        if(time.charAt(6) == 'P'){
+            startHour += 12;
+        }
+        int startMinute = Integer.parseInt(time.substring(3, 5));
+        DateTime dateTime = new DateTime();     
         DatatypeFactory xmlDataTypeFac = null;
         try {
             xmlDataTypeFac = DatatypeFactory.newInstance();
@@ -201,24 +202,24 @@ public class Event{
         calendar.setHour(startHour);
         calendar.setMinute(startMinute);
         calendar.setSecond(0);
-		dateTime.setValue(calendar);
-		return dateTime;
-	}
+        dateTime.setValue(calendar);
+        return dateTime;
+    }
 	
     /**
      * Returns the duration of an event in minutes
      * 
      * @return duration of the event in minutes
      */
-	private long getMinutesDuration(){		
-		DateTime startDateTime = createDateTime(startDate, startTime);
-		DateTime endDateTime = createDateTime(endDate, endTime);
+    private long getMinutesDuration(){      
+        DateTime startDateTime = createDateTime(startDate, startTime);
+        DateTime endDateTime = createDateTime(endDate, endTime);
 
         long milliseconds = endDateTime.getValue().toGregorianCalendar().getTimeInMillis() - startDateTime.getValue().toGregorianCalendar().getTimeInMillis();
         long minutes = milliseconds / 60000;
         
         return minutes;
-	}
+    }
 	
 	/**
 	 * Sets the start date and start time based on the DateTime String
@@ -271,36 +272,35 @@ public class Event{
 	 * based upon the Duration
 	 * 
 	 */
-	private void setEndDateTime(){
+    private void setEndDateTime(){
         DatatypeFactory xmlDataTypeFac = null;
         try {
             xmlDataTypeFac = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException e1) {
             e1.printStackTrace();
         }
-	    
-		DateTime endDateTime = createDateTime(startDate, startTime); // temp == start time
-		Duration duration = xmlDataTypeFac.newDuration(this.duration.toString());
-		endDateTime.getValue().add(duration);
-		String endString = endDateTime.getValue().toString();
-		
-		this.endDate = endString.substring(5, 7) + "-" + endString.substring(8, 10) + "-" + endString.substring(0, 4);
-		int startHours = Integer.parseInt(endString.substring(11, 13));
+        DateTime endDateTime = createDateTime(startDate, startTime);
+        Duration duration = xmlDataTypeFac.newDuration(this.duration.toString());
+        endDateTime.getValue().add(duration);
+        String endString = endDateTime.getValue().toString();
 
-		String startSuffix = " AM";
-		
-		if(startHours >= 12){
-			startSuffix = " PM";
-			if(startHours > 12){
-				startHours -= 12;
-			}
-		}
-		String startHoursString = startHours + "";
-		if(startHours == 0){
-			startHoursString = "12";
-		}
-		this.endTime = (startHoursString + ":" + endString.substring(14, 16) + startSuffix);
-	}
+        this.endDate = endString.substring(5, 7) + "-" + endString.substring(8, 10) + "-" + endString.substring(0, 4);
+        int startHours = Integer.parseInt(endString.substring(11, 13));
+
+        String startSuffix = " AM";
+
+        if(startHours >= 12){
+            startSuffix = " PM";
+            if(startHours > 12){
+                startHours -= 12;
+            }
+        }
+        String startHoursString = startHours + "";
+        if(startHours == 0){
+            startHoursString = "12";
+        }
+        this.endTime = (startHoursString + ":" + endString.substring(14, 16) + startSuffix);
+    }
 	
 	// takes a long of minutes and creates it into an XCal string
 	// only positive and does not account for seconds
@@ -310,57 +310,64 @@ public class Event{
 	 * @param minutes - The number of minutes required by the String
 	 * @return the String properly formatted for XMLGregorianCalendar with 0 values omitted
 	 */
-	private String createXCalString(long minutes){
-		int weeks = (int) (minutes / 10080);
-		minutes -= weeks * 10080;
-		int days = (int) (minutes / 1440);
-		minutes -= days * 1440;
-		int hours = (int) (minutes / 60);
-		minutes -= hours * 60;
-		String returnString = "P";
-		if(weeks > 0){
-			returnString += (weeks + "W");
-		}
-		if(days > 0){
-			returnString += (days + "D");
-		}
-		returnString += "T";
-		if(hours > 0){
-			returnString += (hours + "H");
-		}
-		if(minutes > 0){
-			returnString += (minutes + "M");
-		}
-		return returnString;
-	}
+    private String createXCalString(long minutes){
+        int years = (int) (minutes / 525949);
+        minutes -= years * 545949;    
+        int months = (int) (minutes / 43829);
+        minutes -= months * 43829;
+        int days = (int) (minutes / 1440);
+        minutes -= days * 1440;
+        int hours = (int) (minutes / 60);
+        minutes -= hours * 60;
+        String returnString = "P";
+        if(years > 0){
+            returnString += (years + "Y");
+        }
+        if(months > 0){
+            returnString += (months + "M");
+        }
+        if(days > 0){
+            returnString += (days + "D");
+        }
+        returnString += "T";
+        if(hours > 0){
+            returnString += (hours + "H");
+        }
+        if(minutes > 0){
+            returnString += (minutes + "M");
+        }
+        return returnString;
+    }
 	
-	//uses the regex to take the ISO8601 string and return
-	//the number of minutes contained in it
 	/**
 	 * Converts an XMLGregorianCalendar string to an integer in minutes
 	 * 
 	 * @param xCal - the XMLGregorianCalendar string to be parsed
 	 * @return the total number of minutes contained in the XMLGregorianCalendar string
 	 */
-	public static int minutesFromXCal(String xCal){
-		Pattern p = Pattern.compile("P(?:(\\d+)W)?(?:(\\d+)D)?T?(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
-		Matcher m = p.matcher(xCal);
-		int returnMinutes = 0;
-		m.find();
-		if(m.group(1) != null){
-			returnMinutes += Integer.parseInt(m.group(1)) * 10080;
-		}
-		if(m.group(2) != null){
-			returnMinutes += Integer.parseInt(m.group(2)) * 1440;
-		}
-		if(m.group(3) != null){
-			returnMinutes += Integer.parseInt(m.group(3)) * 60;
-		}
-		if(m.group(4) != null){
-			returnMinutes += Integer.parseInt(m.group(4));
-		}
-		return returnMinutes;	
-	}	
+    public static int minutesFromXCal(String xCal){
+        Logger.warn(xCal);
+        Pattern p = Pattern.compile("P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)D)?T?(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
+        Matcher m = p.matcher(xCal);
+        int returnMinutes = 0;
+        m.find();
+        if(m.group(1) != null){
+            returnMinutes += Integer.parseInt(m.group(1)) * 525949;
+        }
+        if(m.group(2) != null){
+            returnMinutes += Integer.parseInt(m.group(2)) * 43829;
+        }
+        if(m.group(3) != null){
+            returnMinutes += Integer.parseInt(m.group(3)) * 1440;
+        }
+        if(m.group(4) != null){
+            returnMinutes += Integer.parseInt(m.group(4)) * 60;
+        }
+        if(m.group(5) != null){
+            returnMinutes += Integer.parseInt(m.group(5));
+        }
+        return returnMinutes;   
+    }	
 	
 	/**
 	 * Displays a duration in minutes for the Events display page
