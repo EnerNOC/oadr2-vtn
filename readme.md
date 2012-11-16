@@ -70,26 +70,23 @@
 
 <dl>
 <dt>Current Features
-<ul>
-<li>rogram creation, retrieval, and deletion
-<li>VEN creation, retrieval, and deletion
-<li>Event creation, retrieval, update, and deletion
-<li>AJAX update of both VENStatus and Event for EventStatus and OptType
-<li>H2 database storage
-<li>Form validation for creation of all objects
-<li>Super intense Twitter Bootstrap CSS
-<li>HTTP VTN pull response functionality
-<li>Asynchronous XMPP VTN push functionality via thread pool
-</ul>
+<dd>Program creation, retrieval, and deletion
+<dd>VEN creation, retrieval, and deletion
+<dd>Event creation, retrieval, update, and deletion
+<dd>AJAX update of both VENStatus and Event for EventStatus and OptType
+<dd>H2 database storage
+<dd>Form validation for creation of all objects
+<dd>Super intense Twitter Bootstrap CSS
+<dd>HTTP VTN pull response functionality
+<dd>Asynchronous XMPP VTN push functionality via thread pool
 </dl>
 
 <dl>
 <dt>Potential Improvements
-<li>It is ugly, basic Twitter Bootstrap is unacceptable and should not exist on a professional web app. If it were modified with nicer colors (ex. Pantone EnerNOC) and formatting it would be a great addition.
-<li>The Javascript Date and Time for Event creation is very odd, and a DateTime picker would be better. Not to mention the Time field currently goes from 11:45AM to 12:00AM, and noon is treated as 12:00AM rather than 12:00PM
-<li>The selected Program of Events as well as the Date and Time are not pulled into the form when attempting to Edit that event
-<li>Overly verbose queries, lack of joins for such queries and the use of the VENStatus could potentially be removed completely
-<li>Play2 required some iffy type of implementation for injection and singletons, as well as requiring all handling of SSL and TLS from an external web service such as Nginx or Apache, which were supported in Play1
-<li>Errors establishing the XMPP connection, on reload the connection is already established which causes a stream error, causing the connection to be dropped and no XMPP messages to be sent. This should never occur in production. 
-</ul>
+<dd>It is ugly, basic Twitter Bootstrap is unacceptable and should not exist on a professional web app. If it were modified with nicer colors (ex. Pantone EnerNOC) and formatting it would be a great addition.
+<dd>The Javascript Date and Time for Event creation is very odd, and a DateTime picker would be better. Not to mention the Time field currently goes from 11:45AM to 12:00AM, and noon is treated as 12:00AM rather than 12:00PM
+<dd>The selected Program of Events as well as the Date and Time are not pulled into the form when attempting to Edit that event
+<dd>Overly verbose queries, lack of joins for such queries and the use of the VENStatus could potentially be removed completely
+<dd>Play2 required some iffy type of implementation for injection and singletons, as well as requiring all handling of SSL and TLS from an external web service such as Nginx or Apache, which were supported in Play1
+<dd>Errors establishing the XMPP connection, on reload the connection is already established which causes a stream error, causing the connection to be dropped and no XMPP messages to be sent. This should never occur in production. 
 </dl>
