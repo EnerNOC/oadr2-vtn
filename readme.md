@@ -1,4 +1,4 @@
-<h2>OADR2 VTN Reference Implementation – Jeff LaJoie
+<h2>OADR2 VTN Reference Implementation – Jeff LaJoie</h2>
 
 <dl>
 <dt>Index
@@ -25,60 +25,71 @@
 <dd>For sending out the VTN, so as not to lock the application until all Events are done being sent, all events, and their associated target URI are added to a thread pool, PushService, which has all cores pre-started so as to immediately begin firing off the Runnable class, EventPushTask. Redis would be an equally acceptable, and potentially more scalable option in this situation, though for a simple reference there is little need.
 </dl>
 
+<dl>
+<dt>Getting Started
+<dd>Begin by checking out the project from GitHub, link as of 15-11-2012
+<dd>    git clone git@github.com:EnerNOC/oadr2-vtn-refimpl.git
 
-Getting Started
-Begin by checking out the project from GitHub, link as of 15-11-2012
-•	git clone git@github.com:EnerNOC/oadr2-vtn-refimpl.git
+<dd>From there, Play2.0.4 needs to be installed. Instructions for doing so can be found at http://www.playframework.org/documentation/2.0.4/Installing.
 
-From there, Play2.0.4 needs to be installed. Instructions for doing so can be found at http://www.playframework.org/documentation/2.0.4/Installing.
+<dd>Once the play command is on your path, you can start the application in either production or developer mode. The difference in developer mode is that any changes to code immediately affect the application upon reload or redirect.
 
-Once the play command is on your path, you can start the application in either production or developer mode. The difference in developer mode is that any changes to code immediately affect the application upon reload or redirect.
+<dd>Production:
+<dd>    play start [-Dhttp.port=9000] 
+<dd>Developer:
+<dd>    play run
 
-Production:
-•	play start [-Dhttp.port=9000] 
-Developer:
-•	play run
+<dd>When running for SSL and TLS, Play2 needs to be fronted with another web server, such as Apache2 or Nginx, and using reverse proxy to route the information
 
-When running for SSL and TLS, Play2 needs to be fronted with another web server, such as Apache2 or Nginx, and using reverse proxy to route the information
+<dd>The web page should be accessible at http://127.0.0.1:9000 by default.
+</dl>
 
-The web page should be accessible at http://127.0.0.1:9000 by default.
+<dl>
+<dt>Usage Overview
+<dd>As an example, I will walk through the usage of the OpenADR2.0aCertTest_v1_0_4 testcases.vtn.pull.E3_0430_TH_VEN test case.
 
-Usage Overview
-As an example, I will walk through the usage of the OpenADR2.0aCertTest_v1_0_4 testcases.vtn.pull.E3_0430_TH_VEN test case.
+<dd>    1.	Create a program with 
+<dd>        a.	URI:  http://MarketContext1
+<dd>        b.	Program Name:  http://MarketContext1
+<dd>    2.	Create a VEN with 
+<dd>        a.	Program: http://MarketContext1
+<dd>        b.	VEN Name: TH_VEN
+<dd>        c.	VEN ID: TH_VEN
+<dd>        d.	Node Type: Pull
+<dd>    3.	Run the E3_0430_TH_VEN test case and follow the insutrctions
+<dd>        a.	Create an Event with
+<dd>            i.	Program: http://MarketContext1
+<dd>            ii.	Event ID: test-event-one
+<dd>            iii.	Priority: 0
+<dd>            iv.	Intervals: 1
+<dd>            v.	Start date and time as the current time + 2 minutes
+<dd>            vi.	End date and time as the current time + 7 minutes for an interval of 5 minutes
+<dd>        b.	Resume the test after the event has been created
+<dd>    4.	You will be redirected to the page of all VEN responses, which will be refreshed with a VENStatus object displayed, containing the VEN_ID, the OptType, and the Last Response time. To navigate to the general events page, select the Events tab at the top. To access this page once again, click on the entry of the EventID
+</dl>
 
-1.	Create a program with 
-a.	URI:  http://MarketContext1
-b.	Program Name:  http://MarketContext1
-2.	Create a VEN with 
-a.	Program: http://MarketContext1
-b.	VEN Name: TH_VEN
-c.	VEN ID: TH_VEN
-d.	Node Type: Pull
-3.	Run the E3_0430_TH_VEN test case and follow the insutrctions
-a.	Create an Event with
-i.	Program: http://MarketContext1
-ii.	Event ID: test-event-one
-iii.	Priority: 0
-iv.	Intervals: 1
-v.	Start date and time as the current time + 2 minutes
-vi.	End date and time as the current time + 7 minutes for an interval of 5 minutes
-b.	Resume the test after the event has been created
-4.	You will be redirected to the page of all VEN responses, which will be refreshed with a VENStatus object displayed, containing the VEN_ID, the OptType, and the Last Response time. To navigate to the general events page, select the Events tab at the top. To access this page once again, click on the entry of the EventID
+<dl>
+<dt>Current Features
+<ul>
+<li>rogram creation, retrieval, and deletion
+<li>VEN creation, retrieval, and deletion
+<li>Event creation, retrieval, update, and deletion
+<li>AJAX update of both VENStatus and Event for EventStatus and OptType
+<li>H2 database storage
+<li>Form validation for creation of all objects
+<li>Super intense Twitter Bootstrap CSS
+<li>HTTP VTN pull response functionality
+<li>Asynchronous XMPP VTN push functionality via thread pool
+</ul>
+</dl>
 
-Current Features
-•	Program creation, retrieval, and deletion
-•	VEN creation, retrieval, and deletion
-•	Event creation, retrieval, update, and deletion
-•	AJAX update of both VENStatus and Event for EventStatus and OptType
-•	H2 database storage
-•	Form validation for creation of all objects
-•	Super intense Twitter Bootstrap CSS
-•	HTTP VTN pull response functionality
-•	Asynchronous XMPP VTN push functionality via thread pool
-Potential Improvements
-•	It is ugly, basic Twitter Bootstrap is unacceptable and should not exist on a professional web app. If it were modified with nicer colors (ex. Pantone EnerNOC) and formatting it would be a great addition.
-•	The Javascript Date and Time for Event creation is very odd, and a DateTime picker would be better. Not to mention the Time field currently goes from 11:45AM to 12:00AM, and noon is treated as 12:00AM rather than 12:00PM
-•	The selected Program of Events as well as the Date and Time are not pulled into the form when attempting to Edit that event
-•	Overly verbose queries, lack of joins for such queries and the use of the VENStatus could potentially be removed completely
-•	Play2 required some iffy type of implementation for injection and singletons, as well as requiring all handling of SSL and TLS from an external web service such as Nginx or Apache, which were supported in Play1
-•	Errors establishing the XMPP connection, on reload the connection is already established which causes a stream error, causing the connection to be dropped and no XMPP messages to be sent. This should never occur in production. 
+<dl>
+<dt>Potential Improvements
+<li>It is ugly, basic Twitter Bootstrap is unacceptable and should not exist on a professional web app. If it were modified with nicer colors (ex. Pantone EnerNOC) and formatting it would be a great addition.
+<li>The Javascript Date and Time for Event creation is very odd, and a DateTime picker would be better. Not to mention the Time field currently goes from 11:45AM to 12:00AM, and noon is treated as 12:00AM rather than 12:00PM
+<li>The selected Program of Events as well as the Date and Time are not pulled into the form when attempting to Edit that event
+<li>Overly verbose queries, lack of joins for such queries and the use of the VENStatus could potentially be removed completely
+<li>Play2 required some iffy type of implementation for injection and singletons, as well as requiring all handling of SSL and TLS from an external web service such as Nginx or Apache, which were supported in Play1
+<li>Errors establishing the XMPP connection, on reload the connection is already established which causes a stream error, causing the connection to be dropped and no XMPP messages to be sent. This should never occur in production. 
+</ul>
+</dl>
