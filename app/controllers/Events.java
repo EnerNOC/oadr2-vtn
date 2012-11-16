@@ -51,7 +51,6 @@ import org.enernoc.open.oadr2.model.SignalPayload;
 import org.enernoc.open.oadr2.model.SignalTypeEnumeratedType;
 import org.enernoc.open.oadr2.model.Uid;
 
-import play.Logger;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -533,7 +532,6 @@ public class Events extends Controller {
                   .withStreamPayloadBase(signalPayload));
           }
           intervals.setIntervals(intervalList);    
-          Logger.info("EventDuration: " + newEvent.getEiActivePeriod().getProperties().getDuration().getDuration().getValue());
           newEvent
               .withEiActivePeriod(new EiActivePeriod()
                   .withProperties(new Properties()

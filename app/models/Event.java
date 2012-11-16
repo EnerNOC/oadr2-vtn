@@ -28,7 +28,6 @@ import org.enernoc.open.oadr2.model.EiEventSignal;
 import org.enernoc.open.oadr2.model.EiEventSignals;
 import org.enernoc.open.oadr2.model.EventDescriptor;
 import org.enernoc.open.oadr2.model.EventDescriptor.EiMarketContext;
-import org.enernoc.open.oadr2.model.EventStatusEnumeratedType;
 import org.enernoc.open.oadr2.model.Interval;
 import org.enernoc.open.oadr2.model.Intervals;
 import org.enernoc.open.oadr2.model.MarketContext;
@@ -37,7 +36,6 @@ import org.enernoc.open.oadr2.model.Properties;
 import play.Logger;
 import play.data.validation.Constraints.Min;
 import play.data.validation.Constraints.Required;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 
 /**
@@ -346,7 +344,6 @@ public class Event{
 	 * @return the total number of minutes contained in the XMLGregorianCalendar string
 	 */
     public static int minutesFromXCal(String xCal){
-        Logger.warn(xCal);
         Pattern p = Pattern.compile("P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)D)?T?(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
         Matcher m = p.matcher(xCal);
         int returnMinutes = 0;
