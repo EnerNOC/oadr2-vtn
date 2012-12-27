@@ -85,6 +85,8 @@ As an example, I will walk through the usage of the OpenADR2.0aCertTest\_v1\_0\_
 
 Implement & test HTTP Push
 
+Proper configuration for XMPP server/ user settings (they are hard-coded right now)
+
 The Javascript Date and Time for Event creation is very odd, and a DateTime picker would be better. Not to mention the Time field currently goes from 11:45AM to 12:00AM, and noon is treated as 12:00AM rather than 12:00PM
 
 The selected Program of Events as well as the Date and Time are not pulled into the form when attempting to Edit that event
