@@ -17,6 +17,8 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 
+import play.Play;
+import play.Configuration;
 import play.Logger;
 import play.db.jpa.Transactional;
 import service.oadr.EiEventService;
@@ -38,16 +40,16 @@ public class XmppService {
         
     static final String OADR2_XMLNS = "http://openadr.org/oadr-2.0a/2012/07";
     
-    private ConnectionConfiguration connConfig = new ConnectionConfiguration("msawant-mbp.local", 5222);
+    private ConnectionConfiguration connConfig;
     
-    private static XMPPConnection vtnConnection;
+    private XMPPConnection vtnConnection;
     
     @Inject static PushService pushService;// = new PushService();
     @Inject static EiEventService eventService;// = new EiEventService();
     
-    //TODO add these to a config file like spring config or something, hardcoded for now
-    private String vtnUsername = "xmpp-vtn";
-    private String vtnPassword = "xmpp-pass";
+    private String vtnUsername;
+    private String vtnPassword;
+    private String resource;
     
     private Marshaller marshaller;
     DatatypeFactory xmlDataTypeFac;
@@ -63,15 +65,30 @@ public class XmppService {
      * @throws IllegalAccessException
      * @throws JAXBException
      */
-    public XmppService() throws XMPPException, InstantiationException, IllegalAccessException, JAXBException{
+    public XmppService() throws XMPPException, JAXBException{
         //Add for debugging
         //Connection.DEBUG_ENABLED = true;
-        if(vtnConnection == null){
-            vtnConnection = connect(vtnUsername, vtnPassword, "vtn");
-        }
+    	Configuration conf = Play.application().configuration();
+    	String domain = conf.getString("xmpp.domain");
+    	if (domain == null ) domain = "talk.google.com";
+    	this.vtnUsername = conf.getString("xmpp.user");
+    	this.vtnPassword = conf.getString("xmpp.password");
+    	this.resource = conf.getString("xmpp.resource");
+    	if (resource == null ) resource = "vtn";
+    	Integer port = conf.getInt("xmpp.port");
+    	if ( port == null ) port = 5222;
+    	this.connConfig = new ConnectionConfiguration(domain, port);
+    	if ( this.vtnUsername != null && this.vtnPassword != null ) {
+    		try {
+	    		this.vtnConnection = connect(this.vtnUsername, this.vtnPassword, this.resource);
+				}
+				catch ( XMPPException ex ) {
+					Logger.error( "Error connecting to XMPP server", ex );
+				}
+    	}
+    	else Logger.warn("XMPP username or password not set, No XMPP service is available");
         
-        JAXBManager jaxb = new JAXBManager();
-        marshaller = jaxb.createMarshaller();
+      this.marshaller = new JAXBManager().createMarshaller();
     }
     
     /**
@@ -87,10 +104,6 @@ public class XmppService {
                         instance = new XmppService();
                     } catch (XMPPException e) {
                         Logger.error("XMPPException creating XMPPService.", e);
-                    } catch (InstantiationException e) {
-                        Logger.error("InstantiationException creating XMPPService.", e);
-                    } catch (IllegalAccessException e) {
-                        Logger.error("IllegalAccessException creating XMPPService.", e);
                     } catch (JAXBException e) {
                         Logger.error("JAXBException creating XMPPService.", e);
                     }
@@ -146,7 +159,7 @@ public class XmppService {
      * @throws IllegalAccessException
      * @throws XMPPException
      */
-    public XMPPConnection connect(String username, String password, String resource) throws InstantiationException, IllegalAccessException, XMPPException{
+    public XMPPConnection connect(String username, String password, String resource) throws XMPPException {
        XMPPConnection connection = new XMPPConnection(connConfig);
        if(!connection.isConnected()){
            connection.connect();
@@ -156,7 +169,11 @@ public class XmppService {
            }
        }
        return connection;
-    }        
+    }
+
+    public boolean isConnected() {
+			return this.vtnConnection != null && this.vtnConnection.isConnected();
+		}
     
     /**
      * Sends an object to a JID
