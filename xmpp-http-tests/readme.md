@@ -41,14 +41,14 @@ and events that occur in an OpenADR-based system.
 - Switch to the `/xmpp-http-tests` directory
 - Using curl, input the command:
 		
-    curl -v -d @request1.xml -H "Content-type: application/xml" \
+    curl -v -d @httpRequest1.xml -H "Content-type: application/xml" \
       http://localhost:9000/OpenADR2/Simple/EiEvent
 			
 - Wait for the response to refresh through AJAX or to refresh through the Refresh button in 
   the top right	
 - Using curl, input the command
 		
-    curl -v -d @created1.xml -H "Content-type: application/xml" \
+    curl -v -d @httpCreated1.xml -H "Content-type: application/xml" \
       http://localhost:9000/OpenADR2/Simple/EiEvent
 		
 - After pressing the *Refresh* button, *Status* should now read "Opted In" and be a green 
