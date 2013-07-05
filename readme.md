@@ -1,5 +1,8 @@
 # OpenADR 2.0a VTN #
 
+**Note** this project has been superceded by a re-write that currently lives here:
+https://github.com/EnerNOC/oadr2-vtn-new
+
 ## Index
 
 *	[Project Overview](#project-overview)
