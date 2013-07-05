@@ -45,7 +45,7 @@ public class XmppService {
     private XMPPConnection vtnConnection;
     
     @Inject static PushService pushService;// = new PushService();
-    @Inject static EiEventService eventService;// = new EiEventService();
+    static EiEventService eventService = EiEventService.getInstance();
     
     private String vtnUsername;
     private String vtnPassword;
