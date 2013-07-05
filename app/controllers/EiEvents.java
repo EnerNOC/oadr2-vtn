@@ -43,7 +43,9 @@ public class EiEvents extends Controller{
     @Transactional
     public static Result sendHttpResponse() throws JAXBException{
         Unmarshaller unmarshaller = jaxbManager.getContext().createUnmarshaller();
-        Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(request().body().asRaw().asBytes()));
+        byte[] requestbody = request().body().asRaw().asBytes();
+        Logger.info("Payload: " + new String(requestbody));
+        Object payload = unmarshaller.unmarshal(new ByteArrayInputStream(requestbody));
         Object eiResponse = eiEventService.handleOadrPayload(payload);
         Marshaller marshaller = jaxbManager.createMarshaller();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
