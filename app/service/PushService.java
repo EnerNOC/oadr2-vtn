@@ -14,6 +14,7 @@ import org.enernoc.open.oadr2.model.EiEvent;
 import org.enernoc.open.oadr2.model.EiResponse;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent;
 import org.enernoc.open.oadr2.model.ResponseCode;
+import org.enernoc.open.oadr2.model.ResponseRequiredType;
 import org.enernoc.open.oadr2.model.OadrDistributeEvent.OadrEvent;
 
 import play.db.jpa.Transactional;
@@ -47,13 +48,16 @@ public class PushService{
     @Transactional
     public void pushNewEvent(EiEvent e, List<VEN> vens) throws JAXBException{       
         for(VEN v : vens){
-            OadrDistributeEvent distribute = new OadrDistributeEvent()
-            .withOadrEvents(new OadrEvent().withEiEvent(e));
+            OadrDistributeEvent distribute = new OadrDistributeEvent();
             
             distribute.setEiResponse(new EiResponse().withRequestID("Request ID")
                     .withResponseCode(new ResponseCode("200"))
                     .withResponseDescription("Response Description"));
-            distribute.getOadrEvents().add(new OadrEvent().withEiEvent(e));
+            distribute.getOadrEvents().add(
+            		new OadrEvent()
+            			.withEiEvent(e)
+            			.withOadrResponseRequired(ResponseRequiredType.ALWAYS) //TODO Not sure if set to always
+            			);
             distribute.setRequestID("Request ID");
             distribute.setVtnID("VTN ID");
            queue.add(new EventPushTask(v.getClientURI(), distribute));     
